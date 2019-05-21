@@ -9,6 +9,13 @@ import json     # to jsonify the request body from dictionary
 import requests # to send http request (install using pip)
 ```
 
+Basic usage:
+
+Create the object by providing the studyID,token,and url. Call `.create()` to get the measurementID as the return value
+```python
+cm_obj = createMeasurement(studyID, token, rest_url)
+measurementID = cm_obj.create()
+```
 Let's examine the constructor of the Class. It requires a studyID, a token issued by the Deepaffex server, and the url to the REST API in use.
 
 ```python
