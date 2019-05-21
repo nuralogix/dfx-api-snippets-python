@@ -23,17 +23,18 @@ input_directory = args.inputDir
 
 loop = asyncio.get_event_loop()
 
-#create Measurement
-createmeasurementObj = createMeasurement(studyID,token, rest_url)
+# create Measurement
+createmeasurementObj = createMeasurement(studyID, token, rest_url)
 measurementID = createmeasurementObj.create()
 
 # create addData Object which prepares the data need to be sent in the input_directory
-adddataObj =  addData(measurementID, token, rest_url,input_directory)
+adddataObj = addData(measurementID, token, rest_url, input_directory)
 # create subscribeResults Object which prepares the subscribe request
-subscriberesultsObj = subscribeResults(measurementID, token, ws_url, adddataObj.num_chunks)
+subscriberesultsObj = subscribeResults(
+    measurementID, token, ws_url, adddataObj.num_chunks)
 
 # Add
-tasks=[]
+tasks = []
 t = loop.create_task(subscriberesultsObj.subscribe())
 tasks.append(t)
 
@@ -42,4 +43,3 @@ loop.run_until_complete(adddataObj.sendAsync())
 wait_tasks = asyncio.wait(tasks)
 loop.run_until_complete(wait_tasks)
 loop.close()
-
