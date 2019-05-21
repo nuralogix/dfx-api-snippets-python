@@ -2,7 +2,6 @@ import asyncio
 from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
 import uuid
 from google.protobuf.json_format import ParseDict
-import base64
 import websockets
 
 class subscribeResults():
