@@ -51,9 +51,9 @@ class subscribeResults():
                         f.write(response[13:])
             counter += 1
             if counter > self.num_chunks:
-                    print(" Closing websocket ")
-                    await websocket.close()
-                    break
+                print(" Closing websocket ")
+                await websocket.close()
+                break
 
 if __name__ == '__main__':
     measurementID = ''
