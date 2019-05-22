@@ -13,9 +13,11 @@ Basic usage:
 
 Create the object by providing the studyID,token,and url. Call `.create()` to get the measurementID as the return value
 ```python
-cm_obj = createMeasurement(studyID, token, rest_url)
+cm_obj = createMeasurement(studyID, token, rest_url, resolution=0)
 measurementID = cm_obj.create()
 ```
+*Notice we set `resolution=0`, which is the default value. It means that you will get the average result back for this measurement, e.g. average heart rate of the durarion. If you want to have the results come back as vectors, usually time series, you can set `resolution=100`*
+
 Let's examine the constructor of the Class. It requires a studyID, a token issued by the Deepaffex server, and the url to the REST API in use.
 
 ```python
@@ -23,6 +25,7 @@ def __init__(self, studyID, token, rest_url):
     self.studyID = studyID
     self.token = token
     self.rest_url = rest_url
+    self.resolution = resolution
 ```
 
 The `create()` method of the class will then prepare the request header and body and send the request. Here are the steps it takes...
@@ -45,6 +48,7 @@ Prepare the request in dictionary format
 data = {}
 data["StudyID"] = self.studyID
 data["Action"] = self.token
+data["Resolution"] = self.resolution
 ```
 Then sends the request with a JSON body and the headers to the url
 
