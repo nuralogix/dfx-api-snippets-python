@@ -1,22 +1,38 @@
-# How to use
+# DFX API Snippets
 
-1. Create and activate your python3.6 environment and run `pip install .`
-2. Get payloads files(payload, metadata, properties) from the SDK and save them in a directory
-3. Run `python measure.py --inputDir="your directory above" --restUrl=="base REST url to the dfx api" --wsUrl=="base Websocket url to the dfx api" --studyID="studyID received from Nuralogix" --token="Token you get from the registration/login process to the dfx api" `
+This repository contains snippets of code you may find useful to connect to the NuraLogix DeepAffex API
 
-# The measure.py
+## Getting started
 
-It needs the following packages:
+* Create and activate your python3.6 environment and run `pip install .`
+* Get payload files(payload, metadata, properties) from the DFX SDK and save them in a directory
+* In a shell, run:
+
+    ```bash
+    python measure.py --inputDir="your directory above" \
+                      --restUrl=="base REST url to the DFX API" \
+                      --wsUrl=="base Websocket url to the DFX API" \
+                      --studyID="studyID received from Nuralogix" \
+                      --token="Token from registration/login process"
+    ```
+
+## Let's take a look at `measure.py`
+
+First we imports what we need:
+
 ```python
-import asyncio  # asyncio from python
-import argparse # parse the arguments
+import asyncio  # For async operations
+import argparse # For parsing arguments
+
 # The followings are the libraries we made in the dfxpythonclient directory
 # Refer to each .md files of them for detailed description
 from dfxpythonclient.createMeasurement import createMeasurement
 from dfxpythonclient.subscribeResults import subscribeResults
 from dfxpythonclient.addData import addData
 ```
-It parses the input first and then set the studyId, token, rest Url, websocket Url, and input directory to the payloads files.
+
+Then, we parse the command line to set up the `studyId`, `token`, `restUrl`, `websocketUrl`, and input directory to the payload files.
+
 ```python
 parser = argparse.ArgumentParser()
 
@@ -27,7 +43,6 @@ parser.add_argument("--wsUrl", help="DFX Websocket base url")
 parser.add_argument("--inputDir", help="DFX Websocket base url")
 
 args = parser.parse_args()
-print(args)
 
 studyID = args.studyID
 token = args.token
@@ -36,38 +51,49 @@ ws_url = args.wsUrl
 input_directory = args.inputDir
 ```
 
-create the eventloop which manages all the async tasks:
+Then, we create the eventloop which manages all the async tasks:
+
 ```python
 loop = asyncio.get_event_loop()
 ```
-create Measurement and get the measurementID
+
+Then, we create a Measurement and get it's `measurementID`
+
 ```python
 createmeasurementObj = createMeasurement(studyID, token, rest_url)
 measurementID = createmeasurementObj.create()
 ```
-create addData Object which prepares the data need to be sent in the input_directory
+
+Then, we create an `addData` object which prepares the data need to be sent in the `input_directory`
+
 ```python
 adddataObj = addData(measurementID, token, rest_url, input_directory)
 ```
-create subscribeResults Object which prepares the subscribeResuls request
+
+Then, we create a `subscribeResults` object which prepares the subscribeResults request
+
 ```python
-subscriberesultsObj = subscribeResults(
-    measurementID, token, ws_url, adddataObj.num_chunks)
+subscriberesultsObj = subscribeResults(measurementID, token, ws_url, adddataObj.num_chunks)
 ```
 
-Add the `subscribeResults.subscribe()` method to an `async` task list
+Then, we add the `subscribeResults.subscribe()` method to an `async` task list
+
 ```python
 tasks = []
 t = loop.create_task(subscriberesultsObj.subscribe())
 tasks.append(t)
 ```
-*Start* the event loop by ask it to run until it finish all the chunks' sending requests in `addData.sendAsync()` asynchronously:
+
+Then, we *start* the event loop by asking it to run until it finishes all the chunks,  sending requests in `addData.sendAsync()` asynchronously:
+
 ```python
 loop.run_until_complete(adddataObj.sendAsync())
 ```
-*In the above process, whenever the `sendAsync` are `await`ing for IO operation to finish, the event loop will try to switch context to the next async task that is not `await`ing, which is the `subscribeResults.subscribe()` in our case.*
 
-At this point, the event loop finished all the chunks in `addData.sendAsync()`, we ask the eventloop to keep running until the `subscribeResults.subscribe()`, which will return when all chunks results are received, in the task list to finish.
+*In this process, whenever the `sendAsync`s are `await`ing for I/O operation to finish, the event loop will try to switch context to the next async task that is not `await`ing, which is the `subscribeResults.subscribe()` in our case.*
+
+At this point, once the event loop has finished all the chunks in `addData.sendAsync()`, we ask the eventloop to keep running until the `subscribeResults.subscribe()` finishes, which will return when all chunks results are received, in the task list to finish.
+
 ```python
 wait_tasks = asyncio.wait(tasks)
 loop.run_until_complete(wait_tasks)
