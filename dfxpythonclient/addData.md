@@ -84,7 +84,7 @@ If you are sending two chunks, the first one should be `'FIRST::PROCESS'` while
 the second should be `'LAST::PROCESS'`.
 
 If you have more the two chunks, the first one should be `'FIRST::PROCESS'`
-while the second should be `'LAST::PROCESS'`; any other chunks should be
+while the last one should be `'LAST::PROCESS'`; any other chunks should be
 `'CHUNKS::PROCESS'`
 
 ```python
