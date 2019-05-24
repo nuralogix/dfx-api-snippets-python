@@ -1,6 +1,8 @@
 # addData
 
-This class can be used to add data chunks under a `measurementID`. All you need is the `measurementID`, the token you received from the "register/login" process, and the base url of the DFX API REST service
+This class can be used to add data chunks under a `measurementID`. All you need
+is the `measurementID`, the token you received from the "register/login"
+process, and the base URL of the DFX API REST service
 
 This class needs the following packages:
 
@@ -29,23 +31,36 @@ Send the data synchronously
 addD.sendSync()
 ```
 
-Or send the data asynchronously (So you can use asyncio to send, receive, `subscribeResult`s concurrently)
+Or send the data asynchronously (So you can use asyncio to send, receive,
+`subscribeResult`s concurrently)
 
 ```python
 addD.sendAsync()
 ```
 
-Let's examine the constructor of the class. It requires a `measurementID` (the return value of `createMeasurement.create()`), a token issued by the DFX server, the url to the REST API, and a input directory of DFX-SDK generated payload files(together with meta and properties files) in use.
+## Understanding the class
+
+### Constructor
+
+Let's examine the constructor of the class. It requires a `measurementID` (the
+return value of `createMeasurement.create()`), a token issued by the DFX server,
+the URL to the REST API, and a input directory of DFX-SDK generated payload
+files (together with meta and properties files) in use.
 
 ```python
 def __init__(self, measurementID, token, server_url, input_directory):
 ```
 
-It then calls the `self.prepare_data()` to prepare the data to be sent.
+### `prepare_data`
 
-As you can see, it prepares the data chunk by chunk. (You can send multiple chunks to one measurementID - you get partial results for each chunk and an aggregate result of all chunks.)
+`self.prepare_data()` prepares the data to be sent.
 
-One thing to notice is that the payload file has to be encoded using BASE64 (`payload = base64.b64encode(fileContent).decode('utf-8')`) so it can be put into a JSON request.
+As you can see, it prepares the data chunk by chunk. (You can send multiple
+chunks to one `measurementID` - you get partial results for each chunk and an
+aggregate result of all chunks.)
+
+One thing to notice is that the payload file has to be encoded using Base64
+so it can be put into a JSON request.
 
 ```python
 for i in range(total_num_payload):
@@ -58,13 +73,19 @@ for i in range(total_num_payload):
         properties = json.load(input_file)
 ```
 
-For each chunk, we add an `Action`, which tells the server what to do with each chunk. The `'FIRST'` tells it is the first chunk; the `'LAST'` tells it is the last chunk; the `'CHUNK'` tells it is a in-the-middle chunk
+For each chunk, we add an `Action`, which tells the server what to do with it -
+`'FIRST'` for the first chunk, `'LAST'` for the last chunk and `'CHUNK'`
+for any in-the-middle chunks
 
-So if you are sending only one chunk, you should put `'LAST::PROCESS'` since it is the last chunk you will send.
+So if you are sending only one chunk, you should put `'LAST::PROCESS'` since it
+is the last chunk you will send.
 
-If you are sending two chunks, the first one should be `'FIRST::PROCESS'` while the second should be `'LAST::PROCESS'`.
+If you are sending two chunks, the first one should be `'FIRST::PROCESS'` while
+the second should be `'LAST::PROCESS'`.
 
-If you have more the two chunks, the first one should be `'FIRST::PROCESS'` while the second should be `'LAST::PROCESS'`; any other chunks should be `'CHUNKS::PROCESS'`
+If you have more the two chunks, the first one should be `'FIRST::PROCESS'`
+while the second should be `'LAST::PROCESS'`; any other chunks should be
+`'CHUNKS::PROCESS'`
 
 ```python
     if i == 0 and total_num_payload > 1:
@@ -75,9 +96,12 @@ If you have more the two chunks, the first one should be `'FIRST::PROCESS'` whil
         action = 'CHUNK::PROCESS'
 ```
 
-Now we the body part of the HTTP request using this information and append the data to `self.chunks` which buffers all the data that needs to be sent.
+Now we build the body of the HTTP request using this information and append the
+data to `self.chunks` which buffers all the data that needs to be sent.
 
-*Note: The properties file may have different field names based on different versions so you might need to change those field names. For example, the `chunkNumber` maybe `chunk_number` in a different DFX SDK version*
+*Note: The properties file may have different field names based on different
+versions of the DFX SDK that produced it so you might need to change those
+field names. For example, the `chunkNumber` maybe `chunk_number` etc.*
 
 ```python
     chunkOrder = properties['chunkNumber']
@@ -103,7 +127,10 @@ Now we the body part of the HTTP request using this information and append the d
     self.chunks.append(data)
 ```
 
-After `self.chunks` got filled with data chunk by chunk, the object is ready to be used to send data to the server.
+### `sendSync` and `sendAsync`
+
+After `self.chunks` has been filled with data chunk by chunk, the object is
+ready to be used to send data to the server.
 
 There are two ways of sending:
 
@@ -113,7 +140,8 @@ There are two ways of sending:
     addD.sendSync()
     ```
 
-    This function constructs the url, embeds the token and sends the data chunks one by one to the server.
+    This function constructs the URL, embeds the token and sends the data chunks
+    one by one to the server.
 
     ```python
     def sendSync(self):
@@ -128,9 +156,10 @@ There are two ways of sending:
 
     ```python
     addD.sendAsync()
-
     ```
-    This functios, does the same sending process as above but asynchronously, as the definition of the function shows - `async def sendAsync(self)`.
+
+    This function does the same sending process as above but asynchronously,
+    as the definition of the function shows - `async def sendAsync(self)`.
 
     The async I/O happens here:
 
@@ -142,15 +171,27 @@ There are two ways of sending:
     response = await future
     ```
 
-    We use the Python `functools` module to create a wrapper function around the `requests.post` so that it can be `await`ed. Then we get the current eventloop and run the wrapped function in it.
+    We use the Python `functools` module to create a wrapper function around the
+    `requests.post` so that it can be `await`ed. Then we get the current
+    eventloop and run the wrapped function in it.
 
-    The advantage of async sending is that when the I/O is busy to send this data, the eventloop can switch context to another async function and try the I/O of that one.
+    The advantage of async sending is that when I/O is busy to send this data,
+    the eventloop can switch context to another async function and try the I/O
+    of that one.
 
-    For example, instead of waiting the second data to be sent, the eventloop can actually check if there's any result coming back from the first chunk in the `subscribeResult` object, which will be covered in the description of the `subscribeResult` object.
+    For example, instead of waiting the second chunk to be sent, the eventloop
+    can actually check if there's any result coming back for the first chunk
+    in the `subscribeResult` object, which will be covered in the description of
+    the `subscribeResult` object.
 
-    *Note: The API won't process the next chunk if it is received within time window between the start time of the last chunk and the duration of the last chunk. For example, if the last chunk has a duration of 15 seconds, it is not possible, in a real-time measurement, to receive a second chunk short than that time. This will not be a consideration when you are sending real payloads collocted by the SDK because it won't produce a second chunk before the first chunk got extracted*
-
-This is the reason for the `sleep`ing in the code:
+*Note: The API won't process the next chunk if it is received within time
+window between the start time of the last chunk and the duration of the last
+chunk. For example, if the last chunk has a duration of 15 seconds, it is
+not possible, in a real-time measurement, to receive a second chunk short
+than that time. This is usually not a problem when you are sending real
+payloads collected by the SDK because it won't produce a second chunk
+before the first chunk got extracted. This is the reason for the `sleep`ing in
+the code:*
 
 Sync version:
 
@@ -162,7 +203,8 @@ if "LAST" not in chunk['Action']:
 
 Async version:
 
-(Again, while perform this async sleeping the eventloop can switch context to other async functions):
+(Again, while perform this async sleeping the eventloop can switch context to
+other async functions):
 
 ```python
 if "LAST" not in chunk['Action']:
