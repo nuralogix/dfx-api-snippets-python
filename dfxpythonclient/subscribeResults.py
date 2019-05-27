@@ -6,57 +6,33 @@ import websockets
 
 
 class subscribeResults():
-    def __init__(self, measurementID, token, ws_url, num_chunks):
+    def __init__(self, measurementID, token, websocketobj, num_chunks):
         self.measurementID = measurementID
         self.token = token
-        self.ws_url = ws_url
+        self.ws_url = websocketobj.ws_url
         self.num_chunks = num_chunks
         self.requestData = None
-
-        self.prepare_data()
-
-    def prepare_data(self):
-        requestID = uuid.uuid4().hex[:10]
+        self.ws_obj = websocketobj
+        
+    async def prepare_data(self):
         data = {}
+        wsID = self.ws_obj.ws_ID
+        requestID = uuid.uuid4().hex[:10]
         data['RequestID'] = requestID
         data['Query'] = {}
         data['Params'] = dict(ID=self.measurementID)
 
-        wsID = uuid.uuid4().hex[:10]  # Make this ID sequential or variable
+        #wsID = uuid.uuid4().hex[:10]  # Make this ID sequential or variable
         websocketRouteID = '510'
         requestMessageProto = ParseDict(
             data, SubscribeResultsRequest(), ignore_unknown_fields=True)
         self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode(
         ) + requestMessageProto.SerializeToString()
-
+ 
     async def subscribe(self):
-        headers = dict(Authorization="Bearer {}".format(self.token))
-        websocket = await websockets.client.connect(self.ws_url, extra_headers=headers)
-        await websocket.send(self.requestData)
-        counter = 0
-        while True:
-            try:
-                response = await asyncio.wait_for(websocket.recv(), timeout=40)
-            except asyncio.TimeoutError:
-                response = ""
-                await websocket.close()
-                return
-            if response:
-                _id = response[0:10].decode('utf-8')
-                statusCode = response[10:13].decode('utf-8')
-                if counter == 0:
-                    print("Status:", statusCode)
-                    print("websocket connected")
-                else:
-                    print("Data received; Chunk: "+str(counter) +
-                          "; Status: "+str(statusCode))
-                    with open('./result_'+str(counter)+'.bin', 'wb') as f:
-                        f.write(response[13:])
-            counter += 1
-            if counter > self.num_chunks:
-                print(" Closing websocket ")
-                await websocket.close()
-                break
+        print("Subscribing to results")
+        await self.prepare_data()
+        await self.ws_obj.handle_recieve(self.requestData, num_chunks=self.num_chunks, timeout_s=60)
 
 
 if __name__ == '__main__':
