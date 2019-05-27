@@ -148,7 +148,7 @@ class addData():
                 await asyncio.sleep(chunk['Duration'])
 
         print("Done adding data")
-        await self.ws_obj.ws.close()
+        await self.ws_obj.ws_send.close()
         print(" Closing Websocket ", wsID)
 
 

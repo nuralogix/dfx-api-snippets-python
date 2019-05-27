@@ -16,7 +16,7 @@ class subscribeResults():
         
     async def prepare_data(self):
         data = {}
-        wsID = self.ws_obj.ws_ID
+        wsID = self.ws_obj.ws_IDgi
         requestID = uuid.uuid4().hex[:10]
         data['RequestID'] = requestID
         data['Query'] = {}

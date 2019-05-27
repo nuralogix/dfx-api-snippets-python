@@ -10,7 +10,6 @@ class WebsocketHandler():
         self.headers = dict(Authorization="Bearer {}".format(self.token))
         self.ws_recv = None
         self.ws_send = None
-        self.ws = None
         self.ws_ID = uuid.uuid4().hex[:10]      # Use same ws_ID for all connections
     
 
@@ -24,20 +23,20 @@ class WebsocketHandler():
 
 
     async def handle_send(self, actionID, content):
-        if self.ws == None:
-            self.ws = await self.connect_ws()
-        await self.ws.send(content)
+        if self.ws_send == None:
+            self.ws_send = await self.connect_ws()
+        await self.ws_send.send(content)
         while True:
-            response = await self.ws.recv()
+            response = await self.ws_send.recv()
             if response != None:
                 break
         return response
 
 
     async def handle_recieve(self, data, num_chunks=0, timeout_s=20):
-        if self.ws == None:
-            self.ws = await self.connect_ws()
-        await self.ws.send(data)
+        if self.ws_recv == None:
+            self.ws_recv = await self.connect_ws()
+        await self.ws_recv.send(data)
         if num_chunks <= 0:
             raise Exception("No chunks or invalid number of chunks")
 
@@ -45,11 +44,11 @@ class WebsocketHandler():
         counter = 0
         while True:
             try:
-                response = await self.ws.recv()
+                response = await self.ws_recv.recv()
             except asyncio.TimeoutError:
                 response = ""
                 print(" Closing Websocket ", wsID)
-                await self.ws.close()
+                await self.ws_recv.close()
                 return
 
             if response:
@@ -66,5 +65,5 @@ class WebsocketHandler():
             counter += 1
             if counter > num_chunks:
                 print(" Closing Websocket ", wsID)
-                await self.ws.close()
+                await self.ws_recv.close()
                 return
