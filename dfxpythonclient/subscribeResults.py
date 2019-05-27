@@ -22,7 +22,6 @@ class subscribeResults():
         data['Query'] = {}
         data['Params'] = dict(ID=self.measurementID)
 
-        #wsID = uuid.uuid4().hex[:10]  # Make this ID sequential or variable
         websocketRouteID = '510'
         requestMessageProto = ParseDict(
             data, SubscribeResultsRequest(), ignore_unknown_fields=True)
