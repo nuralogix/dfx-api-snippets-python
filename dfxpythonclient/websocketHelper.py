@@ -36,14 +36,13 @@ class WebsocketHandler():
             self.ws = await self.handle_connect()
         await self.ws.send(content)
         while True:
-            if self.recv1 == True:       # Only receive here when other side is not receiving
+            if self.recv1 == True:       # Can only receive here when other side is not receiving
                 response = await self.ws.recv()
                 if response:
                     self.recv2 = True
                     break
             else:
-                await asyncio.sleep(1)
-        self.recv1 = False
+                await asyncio.sleep(1)  # Time gap for polling
         return response
 
     async def handle_recieve(self, data, timeout_s=20):

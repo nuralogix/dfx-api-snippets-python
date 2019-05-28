@@ -35,7 +35,6 @@ class subscribeResults():
         counter = 0
         while counter < self.num_chunks:
             response = await self.ws_obj.handle_recieve(self.requestData, timeout_s=20)
-
             if response:
                 #print(len(response))
                 statusCode = response[10:13].decode('utf-8')
