@@ -16,7 +16,7 @@ class subscribeResults():
         
     async def prepare_data(self):
         data = {}
-        wsID = self.ws_obj.ws_IDgi
+        wsID = self.ws_obj.ws_ID
         requestID = uuid.uuid4().hex[:10]
         data['RequestID'] = requestID
         data['Query'] = {}
@@ -31,7 +31,27 @@ class subscribeResults():
     async def subscribe(self):
         print("Subscribing to results")
         await self.prepare_data()
-        await self.ws_obj.handle_recieve(self.requestData, num_chunks=self.num_chunks, timeout_s=60)
+
+        counter = 0
+        while counter < self.num_chunks:
+            response = await self.ws_obj.handle_recieve(self.requestData, timeout_s=20)
+
+            if response:
+                #print(len(response))
+                statusCode = response[10:13].decode('utf-8')
+                if len(response) <= 13:
+                    if statusCode != '200':
+                        print("Status:", statusCode)
+                else:
+                    counter += 1
+                    _id = response[0:10].decode('utf-8')
+                    print("Data received; Chunk: "+str(counter) +
+                          "; Status: "+str(statusCode))
+                    with open('./result_'+str(counter)+'.bin', 'wb') as f:
+                        f.write(response[13:])
+
+        await self.ws_obj.handle_close()
+        return
 
 
 if __name__ == '__main__':

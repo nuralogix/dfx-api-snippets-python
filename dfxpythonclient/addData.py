@@ -146,10 +146,9 @@ class addData():
             if "LAST" not in chunk['Action']:
                 print("sleep for the chunk duration")
                 await asyncio.sleep(chunk['Duration'])
+                self.ws_obj.sent_req = False
 
         print("Done adding data")
-        await self.ws_obj.ws_send.close()
-        print(" Closing Websocket ", wsID)
 
 
 if __name__ == '__main__':
