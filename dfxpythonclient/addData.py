@@ -153,10 +153,13 @@ class addData():
             print("addData response body: ", response)
             print("*"*10)
 
+            if status_code != '200':
+                print("Error adding data. Please check your inputs.")
+                return
+
             if "LAST" not in chunk['Action']:
                 print("sleep for the chunk duration")
                 await asyncio.sleep(chunk['Duration'])
-                self.ws_obj.sent_req = False
 
         print("Done adding data")
 

@@ -11,7 +11,7 @@ class WebsocketHandler():
         self.ws = None
         self.ws_ID = uuid.uuid4().hex[:10]      # Use same ws_ID for all connections
 
-        # Bools for keeping track of things
+        # Use this to form a mutual exclusion lock
         self.recv1 = True
 
         # Lists for tracking return values
@@ -20,6 +20,8 @@ class WebsocketHandler():
         self.chunks = []
         self.unknown = {}        # For storing messages not coming from a known websocket sender
 
+    async def connect_ws(self):
+        self.ws = await self.handle_connect()
 
     async def handle_connect(self):
         try:
@@ -41,6 +43,7 @@ class WebsocketHandler():
 
     async def handle_recieve(self):
         if self.recv1 == True:
+            # Mutual exclusion lock; prevents multiple calls of recv() on the same websocket connection
             self.recv1 = False
             response = await self.ws.recv()
             self.recv1 = True
@@ -55,7 +58,7 @@ class WebsocketHandler():
             if len(response) == 13:
                 #print("Status for subscribe to results")
                 self.subscribeStats.append(response)
-            elif len(response) == 53:
+            elif len(response) <= 53:
                 #print("Status for addData")
                 self.addDataStats.append(response)
             else:
