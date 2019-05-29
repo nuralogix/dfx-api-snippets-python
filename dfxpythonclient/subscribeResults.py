@@ -3,6 +3,7 @@ from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
 import uuid
 from google.protobuf.json_format import ParseDict
 import websockets
+import time
 
 
 class subscribeResults():
@@ -30,24 +31,32 @@ class subscribeResults():
  
     async def subscribe(self):
         print("Subscribing to results")
+        await asyncio.sleep(0.5)        # Must wait for websocket to connect
+        if self.ws_obj.ws == None:
+            self.ws_obj.ws = await self.ws_obj.handle_connect()
         await self.prepare_data()
+        await self.ws_obj.ws.send(self.requestData)
 
         counter = 0
         while counter < self.num_chunks:
-            response = await self.ws_obj.handle_recieve(self.requestData, timeout_s=20)
-            if response:
-                #print(len(response))
+            await self.ws_obj.handle_recieve()
+            await asyncio.sleep(0.5)
+            if self.ws_obj.subscribeStats:
+                response = self.ws_obj.subscribeStats[0]
+                self.ws_obj.subscribeStats = []
                 statusCode = response[10:13].decode('utf-8')
-                if len(response) <= 13:
-                    if statusCode != '200':
-                        print("Status:", statusCode)
-                else:
-                    counter += 1
-                    _id = response[0:10].decode('utf-8')
-                    print("Data received; Chunk: "+str(counter) +
-                          "; Status: "+str(statusCode))
-                    with open('./result_'+str(counter)+'.bin', 'wb') as f:
-                        f.write(response[13:])
+                if statusCode != '200':
+                    print("Status:", statusCode)
+
+            elif self.ws_obj.chunks:
+                counter += 1
+                response = self.ws_obj.chunks[0]
+                self.ws_obj.chunks = []
+                _id = response[0:10].decode('utf-8')
+                print("Data received; Chunk: "+str(counter) +
+                        "; Status: "+str(statusCode))
+                with open('./result_'+str(counter)+'.bin', 'wb') as f:
+                    f.write(response[13:])
 
         await self.ws_obj.handle_close()
         return

@@ -10,13 +10,16 @@ class WebsocketHandler():
         self.headers = dict(Authorization="Bearer {}".format(self.token))
         self.ws = None
         self.ws_ID = uuid.uuid4().hex[:10]      # Use same ws_ID for all connections
-        self.ws_IDs = []
-        self.buffer = []        # For storing messages not coming from a known websocket sender
 
         # Bools for keeping track of things
-        self.sent_req = False
         self.recv1 = True
-        self.recv2 = True
+
+        # Lists for tracking return values
+        self.addDataStats = []
+        self.subscribeStats = []
+        self.chunks = []
+        self.unknown = {}        # For storing messages not coming from a known websocket sender
+
 
     async def handle_connect(self):
         try:
@@ -31,46 +34,31 @@ class WebsocketHandler():
         await self.ws.close()
         return
 
-    async def handle_send(self, actionID, content):
+    async def handle_send(self, content):
         if self.ws == None:
             self.ws = await self.handle_connect()
         await self.ws.send(content)
-        while True:
-            if self.recv1 == True:       # Can only receive here when other side is not receiving
-                response = await self.ws.recv()
-                if response:
-                    self.recv2 = True
-                    break
-            else:
-                await asyncio.sleep(1)  # Time gap for polling
-        return response
 
-    async def handle_recieve(self, data, timeout_s=20):
-        await asyncio.sleep(0.5)  # Must wait for websocket to connect, also time spacing for polling
-        if self.ws == None:
-            self.ws = await self.handle_connect()
-
-        if self.sent_req == False:
-            await self.ws.send(data)
-            self.sent_req = True
-
-        while True:     # Poll until a response is received
-            await asyncio.sleep(0.5)    # Time spacing for polling, must wait for other things to run
-
-            # Block to ensure that only this part can receive
+    async def handle_recieve(self):
+        if self.recv1 == True:
             self.recv1 = False
-            if self.recv2:
-                response = await self.ws.recv()
-                if response:
-                    break
+            response = await self.ws.recv()
             self.recv1 = True
-
+        else:
+            return
         if response:
             wsID = response[0:10].decode('utf-8')
-            if wsID != self.ws_ID:      # For handling messages not sent by this websocket connectionself.ws_IDs
-                self.ws_IDs.append(wsID)
-                self.buffer.append(response)
-
-            if len(response) > 13:
-                self.recv2 = False
-            return response
+            # Sort out response messages by type
+            if wsID != self.ws_ID:
+                #print("Received a package that didn't come from a local sender")
+                self.unknown[wsID] = response
+            if len(response) == 13:
+                #print("Status for subscribe to results")
+                self.subscribeStats.append(response)
+            elif len(response) == 53:
+                #print("Status for addData")
+                self.addDataStats.append(response)
+            else:
+                #print("Chunk for subscribe to results")
+                self.chunks.append(response)
+        return

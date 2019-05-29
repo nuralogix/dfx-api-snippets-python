@@ -135,7 +135,17 @@ class addData():
             wsID = self.ws_obj.ws_ID
             content = f'{actionID:4}{wsID:10}'.encode() + data.SerializeToString()
 
-            response = await self.ws_obj.handle_send(actionID, content)
+            #response = await self.ws_obj.handle_send1(content)
+
+            await self.ws_obj.handle_send(content)
+            while True:
+                await self.ws_obj.handle_recieve()
+                await asyncio.sleep(0.5)
+                if self.ws_obj.addDataStats:
+                    response = self.ws_obj.addDataStats[0]
+                    self.ws_obj.addDataStats = []
+                    break
+
             status_code = response[10:13].decode('utf-8')
 
             print("*"*10)
