@@ -11,11 +11,11 @@ NuraLogix DeepAffex API
 * In a shell, run:
 
     ```bash
-    python measure.py --inputDir="your directory above" \
-                      --restUrl="base REST url to the DFX API" \
-                      --wsUrl="base Websocket url to the DFX API" \
-                      --studyID="studyID received from Nuralogix" \
-                      --token="Token from registration/login process"
+    python measure.py "studyID received from Nuralogix" \
+                      "Token from registration/login process"
+                      "base REST url to the DFX API" \
+                      "base Websocket url to the DFX API" \
+                      "your directory above"
     ```
 
 ## Let's take a look at `measure.py`
