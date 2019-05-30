@@ -22,23 +22,26 @@ if __name__ == "__main__":
     ws_url = args.wsUrl
     input_directory = args.payloadDir
 
+    # Create the async event loop
     loop = asyncio.get_event_loop()
 
-    # create Measurement
+    # Create a measurement object and get a measurement ID
     createmeasurementObj = createMeasurement(studyID, token, rest_url)
     measurementID = createmeasurementObj.create()
 
-    # create addData Object which prepares the data need to be sent in the input_directory
+    # Create an addData object (which prepares the data need to be sent in the input_directory)
     adddataObj = addData(measurementID, token, rest_url, input_directory)
-    # create subscribeResults Object which prepares the subscribe request
+
+    # Create a subscribeResults object (which prepares the subscribe request)
     subscriberesultsObj = subscribeResults(measurementID, token, ws_url,
                                            adddataObj.num_chunks)
 
-    # Add
+    # Add tasks to the event loop
     tasks = []
     t = loop.create_task(subscriberesultsObj.subscribe())
     tasks.append(t)
 
+    # Run the event loop until all of it's tasks finish
     loop.run_until_complete(adddataObj.sendAsync())
 
     wait_tasks = asyncio.wait(tasks)
