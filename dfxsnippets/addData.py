@@ -50,9 +50,9 @@ class addData():
             else:
                 action = 'CHUNK::PROCESS'
 
-            chunkOrder = properties['chunkNumber']
-            startTime = properties['startTime_s']
-            endTime = properties['endTime_s']
+            chunkOrder = properties['chunk_number']
+            startTime = properties['start_time_s']
+            endTime = properties['end_time_s']
             duration = properties['duration_s']
 
             data = {}
