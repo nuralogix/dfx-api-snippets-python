@@ -101,12 +101,12 @@ data to `self.chunks` which buffers all the data that needs to be sent.
 
 *Note: The properties file may have different field names based on different
 versions of the DFX SDK that produced it so you might need to change those
-field names. For example, the `chunkNumber` maybe `chunk_number` etc.*
+field names. For example, the `chunk_number` maybe `chunkNumber` etc.*
 
 ```python
-    chunkOrder = properties['chunkNumber']
-    startTime = properties['startTime_s']
-    endTime = properties['endTime_s']
+    chunkOrder = properties['chunk_number']
+    startTime = properties['start_time_s']
+    endTime = properties['end_time_s']
     duration = properties['duration_s']
 
     data = {}
