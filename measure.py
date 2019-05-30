@@ -1,8 +1,9 @@
-import asyncio
 import argparse
+import asyncio
+
+from dfxpythonclient.addData import addData
 from dfxpythonclient.createMeasurement import createMeasurement
 from dfxpythonclient.subscribeResults import subscribeResults
-from dfxpythonclient.addData import addData
 
 parser = argparse.ArgumentParser()
 
@@ -30,8 +31,8 @@ measurementID = createmeasurementObj.create()
 # create addData Object which prepares the data need to be sent in the input_directory
 adddataObj = addData(measurementID, token, rest_url, input_directory)
 # create subscribeResults Object which prepares the subscribe request
-subscriberesultsObj = subscribeResults(
-    measurementID, token, ws_url, adddataObj.num_chunks)
+subscriberesultsObj = subscribeResults(measurementID, token, ws_url,
+                                       adddataObj.num_chunks)
 
 # Add
 tasks = []

@@ -1,9 +1,9 @@
-import requests
 import json
+
+import requests
 
 
 class createMeasurement():
-
     def __init__(self, studyID, token, rest_url, resolution=0):
         self.studyID = studyID
         self.token = token
@@ -20,15 +20,14 @@ class createMeasurement():
         headers = dict(Authorization="Bearer {}".format(self.token))
         headers['Content-Type'] = "application/json"
         try:
-            response = requests.post(
-                url, data=json.dumps(data), headers=headers)
+            response = requests.post(url, data=json.dumps(data), headers=headers)
         except:
             raise ValueError(' Can not create measurement on server')
             return ''
-        print("*"*10)
+        print("*" * 10)
         print("createMeasurement response code: ", response.status_code)
         print("createMeasurement response body: ", response.json())
-        print("*"*10)
+        print("*" * 10)
         measurementID = response.json()['ID']
         return measurementID
 

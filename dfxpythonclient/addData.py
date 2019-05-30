@@ -1,11 +1,12 @@
-import functools
 import asyncio
 import base64
-import requests
+import functools
 import json
+import os
 import time
 from glob import glob
-import os
+
+import requests
 
 
 class addData():
@@ -22,21 +23,25 @@ class addData():
         return len(self.chunks)
 
     def prepare_data(self):
-        total_num_payload = len(
-            glob(os.path.join(self.input_directory, 'payload*.bin')))
-        total_num_meta = len(
-            glob(os.path.join(self.input_directory, 'metadata*.bin')))
+        total_num_payload = len(glob(os.path.join(self.input_directory, 'payload*.bin')))
+        total_num_meta = len(glob(os.path.join(self.input_directory, 'metadata*.bin')))
         total_num_properties = len(
             glob(os.path.join(self.input_directory, 'properties*.json')))
         if total_num_meta != total_num_payload != total_num_properties:
             raise ValueError('Missing files')
         for i in range(total_num_payload):
-            with open(os.path.join(self.input_directory, 'payload' + str(i) + '.bin'), 'rb') as input_file:
+            with open(
+                    os.path.join(self.input_directory, 'payload' + str(i) + '.bin'),
+                    'rb') as input_file:
                 fileContent = input_file.read()
             payload = base64.b64encode(fileContent).decode('utf-8')
-            with open(os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'), 'r') as input_file:
+            with open(
+                    os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'),
+                    'r') as input_file:
                 meta = json.load(input_file)
-            with open(os.path.join(self.input_directory, 'properties' + str(i) + '.json'), 'r') as input_file:
+            with open(
+                    os.path.join(self.input_directory, 'properties' + str(i) + '.json'),
+                    'r') as input_file:
                 properties = json.load(input_file)
             if i == 0 and total_num_payload > 1:
                 action = 'FIRST::PROCESS'
@@ -68,21 +73,21 @@ class addData():
             self.chunks.append(data)
 
     def sendSync(self):
-        url = self.server_url + "/measurements/"+self.measurementID+"/data"
+        url = self.server_url + "/measurements/" + self.measurementID + "/data"
         headers = dict(Authorization="Bearer {}".format(self.token))
         headers['Content-Type'] = "application/json"
         for chunk in self.chunks:
             response = requests.post(url, json=chunk, headers=headers)
-            print("*"*10)
+            print("*" * 10)
             print("addData response code: ", response.status_code)
             print("addData response body: ", response.json())
-            print("*"*10)
+            print("*" * 10)
             if "LAST" not in chunk['Action']:
                 print("sleep for the chunk duration")
                 time.sleep(chunk['Duration'])
 
     async def sendAsync(self):
-        url = self.server_url + "/measurements/"+self.measurementID+"/data"
+        url = self.server_url + "/measurements/" + self.measurementID + "/data"
         headers = dict(Authorization="Bearer {}".format(self.token))
         headers['Content-Type'] = "application/json"
         for chunk in self.chunks:
@@ -91,10 +96,10 @@ class addData():
             loop = asyncio.get_event_loop()
             future = loop.run_in_executor(None, requestFunction)
             response = await future
-            print("*"*10)
+            print("*" * 10)
             print("addData response code: ", response.status_code)
             print("addData response body: ", response.json())
-            print("*"*10)
+            print("*" * 10)
             if "LAST" not in chunk['Action']:
                 print("sleep for the chunk duration")
                 await asyncio.sleep(chunk['Duration'])
