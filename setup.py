@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='dfxpythonclient',
+    name='dfxsnippets',
     version='0.1',
     description='a tutorial of dfx-api ',
     url='http://',

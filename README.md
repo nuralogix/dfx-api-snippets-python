@@ -1,6 +1,6 @@
-# DFX API Snippets
+# DFX API Python Snippets
 
-This repository contains snippets of code you may find useful to connect to the
+This repository contains snippets of Python code you may find useful to connect to the
 NuraLogix DeepAffex API
 
 ## Getting started
@@ -26,11 +26,11 @@ First we import what we need:
 import asyncio  # For async operations
 import argparse # For parsing arguments
 
-# The followings are the libraries we made in the dfxpythonclient directory
+# The followings are the libraries we made in the dfxsnippets directory
 # Refer to each .md files of them for detailed description
-from dfxpythonclient.createMeasurement import createMeasurement
-from dfxpythonclient.subscribeResults import subscribeResults
-from dfxpythonclient.addData import addData
+from dfxsnippets.createMeasurement import createMeasurement
+from dfxsnippets.subscribeResults import subscribeResults
+from dfxsnippets.addData import addData
 ```
 
 Then, we parse the command line to set up the `studyId`, `token`, `restUrl`,

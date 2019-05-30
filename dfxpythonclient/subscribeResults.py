@@ -4,7 +4,7 @@ import uuid
 from google.protobuf.json_format import ParseDict
 
 import websockets
-from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
+from dfxsnippets.measurement_pb2 import SubscribeResultsRequest
 
 
 class subscribeResults():

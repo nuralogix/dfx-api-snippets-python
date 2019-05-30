@@ -1,9 +1,9 @@
 import argparse
 import asyncio
 
-from dfxpythonclient.addData import addData
-from dfxpythonclient.createMeasurement import createMeasurement
-from dfxpythonclient.subscribeResults import subscribeResults
+from dfxsnippets.addData import addData
+from dfxsnippets.createMeasurement import createMeasurement
+from dfxsnippets.subscribeResults import subscribeResults
 
 parser = argparse.ArgumentParser()
 
