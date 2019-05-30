@@ -1,45 +1,49 @@
-import asyncio
 import argparse
-from dfxpythonclient.createMeasurement import createMeasurement
-from dfxpythonclient.subscribeResults import subscribeResults
-from dfxpythonclient.addData import addData
+import asyncio
 
-parser = argparse.ArgumentParser()
+from dfxsnippets.addData import addData
+from dfxsnippets.createMeasurement import createMeasurement
+from dfxsnippets.subscribeResults import subscribeResults
 
-parser.add_argument("--studyID", help="StudyID")
-parser.add_argument("--token", help="user or device token")
-parser.add_argument("--restUrl", help="DFX Rest API base url")
-parser.add_argument("--wsUrl", help="DFX Websocket base url")
-parser.add_argument("--inputDir", help="DFX Websocket base url")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="DFX API Python snippets example")
 
-args = parser.parse_args()
-print(args)
+    parser.add_argument("studyID", help="StudyID")
+    parser.add_argument("token", help="user or device token")
+    parser.add_argument("restUrl", help="DFX API REST url")
+    parser.add_argument("wsUrl", help="DFX API Websocket url")
+    parser.add_argument("payloadDir", help="Directory of payload files")
 
-studyID = args.studyID
-token = args.token
-rest_url = args.restUrl
-ws_url = args.wsUrl
-input_directory = args.inputDir
+    args = parser.parse_args()
 
-loop = asyncio.get_event_loop()
+    studyID = args.studyID
+    token = args.token
+    rest_url = args.restUrl
+    ws_url = args.wsUrl
+    input_directory = args.payloadDir
 
-# create Measurement
-createmeasurementObj = createMeasurement(studyID, token, rest_url)
-measurementID = createmeasurementObj.create()
+    # Create the async event loop
+    loop = asyncio.get_event_loop()
 
-# create addData Object which prepares the data need to be sent in the input_directory
-adddataObj = addData(measurementID, token, rest_url, input_directory)
-# create subscribeResults Object which prepares the subscribe request
-subscriberesultsObj = subscribeResults(
-    measurementID, token, ws_url, adddataObj.num_chunks)
+    # Create a measurement object and get a measurement ID
+    createmeasurementObj = createMeasurement(studyID, token, rest_url)
+    measurementID = createmeasurementObj.create()
 
-# Add
-tasks = []
-t = loop.create_task(subscriberesultsObj.subscribe())
-tasks.append(t)
+    # Create an addData object (which prepares the data need to be sent in the input_directory)
+    adddataObj = addData(measurementID, token, rest_url, input_directory)
 
-loop.run_until_complete(adddataObj.sendAsync())
+    # Create a subscribeResults object (which prepares the subscribe request)
+    subscriberesultsObj = subscribeResults(measurementID, token, ws_url,
+                                           adddataObj.num_chunks)
 
-wait_tasks = asyncio.wait(tasks)
-loop.run_until_complete(wait_tasks)
-loop.close()
+    # Add tasks to the event loop
+    tasks = []
+    t = loop.create_task(subscriberesultsObj.subscribe())
+    tasks.append(t)
+
+    # Run the event loop until all of it's tasks finish
+    loop.run_until_complete(adddataObj.sendAsync())
+
+    wait_tasks = asyncio.wait(tasks)
+    loop.run_until_complete(wait_tasks)
+    loop.close()

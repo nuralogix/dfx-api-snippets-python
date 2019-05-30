@@ -1,8 +1,10 @@
 import asyncio
-from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
 import uuid
+
 from google.protobuf.json_format import ParseDict
+
 import websockets
+from dfxsnippets.measurement_pb2 import SubscribeResultsRequest
 
 
 class subscribeResults():
@@ -48,9 +50,9 @@ class subscribeResults():
                     print("Status:", statusCode)
                     print("websocket connected")
                 else:
-                    print("Data received; Chunk: "+str(counter) +
-                          "; Status: "+str(statusCode))
-                    with open('./result_'+str(counter)+'.bin', 'wb') as f:
+                    print("Data received; Chunk: " + str(counter) + "; Status: " +
+                          str(statusCode))
+                    with open('./result_' + str(counter) + '.bin', 'wb') as f:
                         f.write(response[13:])
             counter += 1
             if counter > self.num_chunks:

@@ -1,6 +1,6 @@
-# DFX API Snippets
+# DFX API Python Snippets
 
-This repository contains snippets of code you may find useful to connect to the
+This repository contains snippets of Python code you may find useful to connect to the
 NuraLogix DeepAffex API
 
 ## Getting started
@@ -26,11 +26,11 @@ First we import what we need:
 import asyncio  # For async operations
 import argparse # For parsing arguments
 
-# The followings are the libraries we made in the dfxpythonclient directory
+# The followings are the libraries we made in the dfxsnippets directory
 # Refer to each .md files of them for detailed description
-from dfxpythonclient.createMeasurement import createMeasurement
-from dfxpythonclient.subscribeResults import subscribeResults
-from dfxpythonclient.addData import addData
+from dfxsnippets.createMeasurement import createMeasurement
+from dfxsnippets.subscribeResults import subscribeResults
+from dfxsnippets.addData import addData
 ```
 
 Then, we parse the command line to set up the `studyId`, `token`, `restUrl`,
@@ -39,11 +39,11 @@ Then, we parse the command line to set up the `studyId`, `token`, `restUrl`,
 ```python
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--studyID", help="StudyID")
-parser.add_argument("--token", help="user or device token")
-parser.add_argument("--restUrl", help="DFX Rest API base url")
-parser.add_argument("--wsUrl", help="DFX Websocket base url")
-parser.add_argument("--inputDir", help="DFX Websocket base url")
+parser.add_argument("studyID", help="StudyID")
+parser.add_argument("token", help="user or device token")
+parser.add_argument("restUrl", help="DFX API REST url")
+parser.add_argument("wsUrl", help="DFX API Websocket url")
+parser.add_argument("payloadDir", help="Directory of payload files")
 
 args = parser.parse_args()
 
@@ -51,7 +51,7 @@ studyID = args.studyID
 token = args.token
 rest_url = args.restUrl
 ws_url = args.wsUrl
-input_directory = args.inputDir
+input_directory = args.payloadDir
 ```
 
 Then, we create the eventloop which manages all the async tasks:

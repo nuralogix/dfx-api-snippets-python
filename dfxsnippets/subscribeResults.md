@@ -7,7 +7,7 @@ It depends upon the following packages:
 
 ```python
 import asyncio # the Asynchronous io
-from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
+from dfxsnippets.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
 import uuid # Used to generate uuid
 from google.protobuf.json_format import ParseDict # used to parse python dictionary to protobuf
 import websockets # Websocket
