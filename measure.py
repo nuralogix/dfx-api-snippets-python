@@ -37,6 +37,8 @@ adddataObj = addData(measurementID, token, rest_url, websocketobj, input_directo
 subscriberesultsObj = subscribeResults(
     measurementID, token, websocketobj, adddataObj.num_chunks)
 
+loop.run_until_complete(websocketobj.connect_ws())    # Must first connect websocket
+
 # Add tasks to event loop
 tasks = []
 a = loop.create_task(subscriberesultsObj.subscribe())   # Subscribe to results
@@ -45,8 +47,6 @@ b = loop.create_task(adddataObj.sendWS())               # Add data using websock
 tasks.append(b)
 #c = loop.create_task(adddataObj.sendAsync())           # Add data using REST 
 #tasks.append(c)
-
-loop.run_until_complete(websocketobj.connect_ws())    # Must first connect websocket
 
 wait_tasks = asyncio.wait(tasks)
 loop.run_until_complete(wait_tasks)

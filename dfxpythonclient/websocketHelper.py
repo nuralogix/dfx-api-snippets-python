@@ -38,9 +38,10 @@ class WebsocketHandler():
         return
 
     async def handle_send(self, content):
-        if self.ws == None:
-            await asyncio.sleep(0.5)    # Wait for websocket to connect
-        await self.ws.send(content)
+        try:
+            await self.ws.send(content)
+        except:
+            raise Exception("Websocket not connected")
 
     async def handle_recieve(self):
         if self.recv == True:
