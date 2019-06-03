@@ -51,9 +51,9 @@ class addData():
             else:
                 action = 'CHUNK::PROCESS'
 
-            chunkOrder = properties['chunkNumber']
-            startTime = properties['startTime_s']
-            endTime = properties['endTime_s']
+            chunkOrder = properties['chunk_number']  # chunkNumber
+            startTime = properties['start_time_s']  # startTime_s
+            endTime = properties['end_time_s']   # endTime_s
             duration = properties['duration_s']
 
             data = {}
@@ -135,12 +135,12 @@ class addData():
             wsID = self.ws_obj.ws_ID
             content = f'{actionID:4}{wsID:10}'.encode() + data.SerializeToString()
 
-            #response = await self.ws_obj.handle_send1(content)
-
             await self.ws_obj.handle_send(content)
             while True:
-                await self.ws_obj.handle_recieve()
-                await asyncio.sleep(0.5)
+                try:
+                    await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=1)
+                except TimeoutError:
+                    continue
                 if self.ws_obj.addDataStats:
                     response = self.ws_obj.addDataStats[0]
                     self.ws_obj.addDataStats = []

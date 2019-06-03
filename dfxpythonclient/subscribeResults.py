@@ -31,16 +31,12 @@ class subscribeResults():
  
     async def subscribe(self):
         print("Subscribing to results")
-        await asyncio.sleep(0.5)        # Must wait for websocket to connect
-        if self.ws_obj.ws == None:
-            self.ws_obj.ws = await self.ws_obj.handle_connect()
         await self.prepare_data()
-        await self.ws_obj.ws.send(self.requestData)
+        await self.ws_obj.handle_send(self.requestData)
 
         counter = 0
         while counter < self.num_chunks:
             await self.ws_obj.handle_recieve()
-            await asyncio.sleep(0.5)
             if self.ws_obj.subscribeStats:
                 response = self.ws_obj.subscribeStats[0]
                 self.ws_obj.subscribeStats = []

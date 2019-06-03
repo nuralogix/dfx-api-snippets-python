@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 import websockets
 
@@ -12,7 +13,7 @@ class WebsocketHandler():
         self.ws_ID = uuid.uuid4().hex[:10]      # Use same ws_ID for all connections
 
         # Use this to form a mutual exclusion lock
-        self.recv1 = True
+        self.recv = True
 
         # Lists for tracking return values
         self.addDataStats = []
@@ -38,15 +39,15 @@ class WebsocketHandler():
 
     async def handle_send(self, content):
         if self.ws == None:
-            self.ws = await self.handle_connect()
+            await asyncio.sleep(0.5)    # Wait for websocket to connect
         await self.ws.send(content)
 
     async def handle_recieve(self):
-        if self.recv1 == True:
+        if self.recv == True:
             # Mutual exclusion lock; prevents multiple calls of recv() on the same websocket connection
-            self.recv1 = False
+            self.recv = False
             response = await self.ws.recv()
-            self.recv1 = True
+            self.recv = True
         else:
             return
         if response:
@@ -55,13 +56,14 @@ class WebsocketHandler():
             if wsID != self.ws_ID:
                 #print("Received a package that didn't come from a local sender")
                 self.unknown[wsID] = response
-            if len(response) == 13:
-                #print("Status for subscribe to results")
-                self.subscribeStats.append(response)
-            elif len(response) <= 53:
-                #print("Status for addData")
-                self.addDataStats.append(response)
-            else:
-                #print("Chunk for subscribe to results")
-                self.chunks.append(response)
+
+            with open('./default.config') as json_file:  
+                data = json.load(json_file)
+            
+                if len(response) == int(data["Subscribe_status"]):
+                    self.subscribeStats.append(response)
+                elif len(response) <= int(data["Adddata_status"]):
+                    self.addDataStats.append(response)
+                else:
+                    self.chunks.append(response)
         return

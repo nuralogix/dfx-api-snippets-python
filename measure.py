@@ -24,27 +24,29 @@ input_directory = args.inputDir
 
 loop = asyncio.get_event_loop()
 
-websocketobj = WebsocketHandler(token, ws_url)  # For handling websockets
+# Create object for handling websockets
+websocketobj = WebsocketHandler(token, ws_url) 
 
-# create Measurement
+# Create Measurement
 createmeasurementObj = createMeasurement(studyID, token, rest_url)
 measurementID = createmeasurementObj.create()
 
-# create addData Object which prepares the data need to be sent in the input_directory
+# Create addData Object which prepares the data need to be sent in the input_directory
 adddataObj = addData(measurementID, token, rest_url, websocketobj, input_directory)
-# create subscribeResults Object which prepares the subscribe request
+# Create subscribeResults Object which prepares the subscribe request
 subscriberesultsObj = subscribeResults(
     measurementID, token, websocketobj, adddataObj.num_chunks)
 
-# Add
+# Add tasks to event loop
 tasks = []
-#u = loop.create_task(websocketobj.connect_ws())
-t = loop.create_task(subscriberesultsObj.subscribe())
-#tasks.append(u)
-tasks.append(t)
+a = loop.create_task(subscriberesultsObj.subscribe())   # Subscribe to results
+tasks.append(a)
+b = loop.create_task(adddataObj.sendWS())               # Add data using websockets
+tasks.append(b)
+#c = loop.create_task(adddataObj.sendAsync())           # Add data using REST 
+#tasks.append(c)
 
-#loop.run_until_complete(adddataObj.sendAsync())
-loop.run_until_complete(adddataObj.sendWS())
+loop.run_until_complete(websocketobj.connect_ws())    # Must first connect websocket
 
 wait_tasks = asyncio.wait(tasks)
 loop.run_until_complete(wait_tasks)
