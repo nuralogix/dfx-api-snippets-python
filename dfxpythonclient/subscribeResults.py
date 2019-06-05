@@ -35,7 +35,7 @@ class subscribeResults():
         await self.ws_obj.handle_send(self.requestData)
 
         counter = 0
-        while counter < self.num_chunks:
+        while counter < self.num_chunks:            
             await self.ws_obj.handle_recieve()
             if self.ws_obj.subscribeStats:
                 response = self.ws_obj.subscribeStats[0]
@@ -51,7 +51,7 @@ class subscribeResults():
                 _id = response[0:10].decode('utf-8')
                 print("Data received; Chunk: "+str(counter) +
                         "; Status: "+str(statusCode))
-                with open('./result_'+str(counter)+'.bin', 'wb') as f:
+                with open('../data/result_'+str(counter)+'.bin', 'wb') as f:
                     f.write(response[13:])
 
         await self.ws_obj.handle_close()

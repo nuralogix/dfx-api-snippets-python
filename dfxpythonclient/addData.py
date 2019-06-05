@@ -19,8 +19,12 @@ class addData():
         self.server_url = server_url
         self.input_directory = input_directory
         self.chunks = []
-        self.prepare_data()
         self.ws_obj = websocketobj
+        if websocketobj:
+            self.conn_method = 'ws'
+        else:
+            self.conn_method = 'REST'
+        self.prepare_data()
 
     @property
     def num_chunks(self):
@@ -56,110 +60,108 @@ class addData():
             endTime = properties['end_time_s']   # endTime_s
             duration = properties['duration_s']
 
-            data = {}
-            data["ChunkOrder"] = chunkOrder
-            data["Action"] = action
-            data["StartTime"] = startTime
-            data["EndTime"] = endTime
-            data["Duration"] = duration
-            # Additional meta fields !
-            meta['Order'] = chunkOrder
-            meta['StartTime'] = startTime
-            meta['EndTime'] = endTime
-            meta['Duration'] = data['Duration']
+            if self.conn_method == 'REST':  # For using REST
+                data = {}
+                data["ChunkOrder"] = chunkOrder
+                data["Action"] = action
+                data["StartTime"] = startTime
+                data["EndTime"] = endTime
+                data["Duration"] = duration
+                # Additional meta fields !
+                meta['Order'] = chunkOrder
+                meta['StartTime'] = startTime
+                meta['EndTime'] = endTime
+                meta['Duration'] = duration
 
-            data['Meta'] = json.dumps(meta)
-            data["Payload"] = payload
+                data['Meta'] = json.dumps(meta)
+                data["Payload"] = base64.b64encode(payload).decode('utf-8')
+
+            else:       # For using websockets
+                data = DataRequest()    # Need to reconfigure each chunk into a protocol buffer
+                paramval = data.Params
+                paramval.ID = self.measurementID
+
+                data.ChunkOrder = chunkOrder
+                data.Action     = action
+                data.StartTime  = startTime
+                data.EndTime    = endTime
+                data.Duration   = duration
+                # Additional meta fields !
+                meta['Order'] = chunkOrder
+                meta['StartTime'] = startTime
+                meta['EndTime'] = endTime
+                meta['Duration'] = data.Duration
+                data.Meta = json.dumps(meta).encode()
+                data.Payload = bytes(payload)
 
             self.chunks.append(data)
 
     def sendSync(self):
-        url = self.server_url + "/measurements/"+self.measurementID+"/data"
-        headers = dict(Authorization="Bearer {}".format(self.token))
-        headers['Content-Type'] = "application/json"
-        for chunk in self.chunks:
-            chunk["Payload"] = base64.b64encode(chunk["Payload"]).decode('utf-8')
-
-            response = requests.post(url, json=chunk, headers=headers)
-            print("*"*10)
-            print("addData response code: ", response.status_code)
-            print("addData response body: ", response.json())
-            print("*"*10)
-            if "LAST" not in chunk['Action']:
-                print("sleep for the chunk duration")
-                time.sleep(chunk['Duration'])
-        print("Done adding data")
+        if self.conn_method == 'REST':
+            url = self.server_url + "/measurements/"+self.measurementID+"/data"
+            headers = dict(Authorization="Bearer {}".format(self.token))
+            headers['Content-Type'] = "application/json"
+            for chunk in self.chunks:
+                response = requests.post(url, json=chunk, headers=headers)
+                print("*"*10)
+                print("addData response code: ", response.status_code)
+                print("addData response body: ", response.json())
+                print("*"*10)
+                if "LAST" not in chunk['Action']:
+                    print("sleep for the chunk duration")
+                    time.sleep(chunk['Duration'])
+            print("Done adding data")
 
     async def sendAsync(self):
-        url = self.server_url + "/measurements/"+self.measurementID+"/data"
-        headers = dict(Authorization="Bearer {}".format(self.token))
-        headers['Content-Type'] = "application/json"
-        for chunk in self.chunks:
-            chunk["Payload"] = base64.b64encode(chunk["Payload"]).decode('utf-8')
+        if self.conn_method == 'REST':
+            url = self.server_url + "/measurements/"+self.measurementID+"/data"
+            headers = dict(Authorization="Bearer {}".format(self.token))
+            headers['Content-Type'] = "application/json"
+            for chunk in self.chunks:
+                requestFunction = functools.partial(
+                    requests.post, url=url, json=chunk, headers=headers)
+                loop = asyncio.get_event_loop()
+                future = loop.run_in_executor(None, requestFunction)
+                response = await future
+                print("*"*10)
+                print("addData response code: ", response.status_code)
+                print("addData response body: ", response.json())
+                print("*"*10)
+                if "LAST" not in chunk['Action']:
+                    print("sleep for the chunk duration")
+                    await asyncio.sleep(chunk['Duration'])
 
-            requestFunction = functools.partial(
-                requests.post, url=url, json=chunk, headers=headers)
-            loop = asyncio.get_event_loop()
-            future = loop.run_in_executor(None, requestFunction)
-            response = await future
-            print("*"*10)
-            print("addData response code: ", response.status_code)
-            print("addData response body: ", response.json())
-            print("*"*10)
-            if "LAST" not in chunk['Action']:
-                print("sleep for the chunk duration")
-                await asyncio.sleep(chunk['Duration'])
-        print("Done adding data")
-
-    async def sendWS(self):
-        for chunk in self.chunks:
-            data = DataRequest()
-            paramval = data.Params
-            paramval.ID = self.measurementID
-
-            meta = {}
-            data.ChunkOrder = chunk["ChunkOrder"]
-            data.Action     = chunk["Action"]
-            data.StartTime  = chunk["StartTime"]
-            data.EndTime    = chunk["EndTime"]
-            data.Duration   = chunk["Duration"]
-            # Additional meta fields !
-            meta['Order'] = chunk["ChunkOrder"]
-            meta['StartTime'] = chunk["StartTime"]
-            meta['EndTime'] = chunk["EndTime"]
-            meta['Duration'] = data.Duration
-            data.Meta = json.dumps(meta).encode()
-            data.Payload = bytes(chunk["Payload"])
-
+        else:
             actionID = '506'
             wsID = self.ws_obj.ws_ID
-            content = f'{actionID:4}{wsID:10}'.encode() + data.SerializeToString()
+            for chunk in self.chunks:
+                content = f'{actionID:4}{wsID:10}'.encode() + chunk.SerializeToString()
 
-            await self.ws_obj.handle_send(content)
-            while True:
-                try:
-                    await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=1)
-                except TimeoutError:
-                    continue
-                if self.ws_obj.addDataStats:
-                    response = self.ws_obj.addDataStats[0]
-                    self.ws_obj.addDataStats = []
-                    break
+                await self.ws_obj.handle_send(content)
+                while True:
+                    try:
+                        await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=10)
+                    except TimeoutError:
+                        break
+                    if self.ws_obj.addDataStats:
+                        response = self.ws_obj.addDataStats[0]
+                        self.ws_obj.addDataStats = []
+                        break
 
-            status_code = response[10:13].decode('utf-8')
+                status_code = response[10:13].decode('utf-8')
 
-            print("*"*10)
-            print("addData response code: ", status_code)
-            print("addData response body: ", response)
-            print("*"*10)
+                print("*"*10)
+                print("addData response code: ", status_code)
+                print("addData response body: ", response)
+                print("*"*10)
 
-            if status_code != '200':
-                print("Error adding data. Please check your inputs.")
-                return
+                if status_code != '200':
+                    print("Error adding data. Please check your inputs.")
+                    return
 
-            if "LAST" not in chunk['Action']:
-                print("sleep for the chunk duration")
-                await asyncio.sleep(chunk['Duration'])
+                if "LAST" not in chunk.Action:
+                    print("sleep for the chunk duration")
+                    await asyncio.sleep(chunk.Duration)
 
         print("Done adding data")
 
