@@ -55,9 +55,15 @@ class addData():
             else:
                 action = 'CHUNK::PROCESS'
 
-            chunkOrder = properties['chunk_number']  # chunkNumber
-            startTime = properties['start_time_s']  # startTime_s
-            endTime = properties['end_time_s']   # endTime_s
+            if (meta["dfxsdk"] < "4.0"):
+                chunkOrder = properties['chunkNumber']
+                startTime = properties['startTime_s']
+                endTime = properties['endTime_s']
+            else:
+                chunkOrder = properties['chunk_number']
+                startTime = properties['start_time_s']
+                endTime = properties['end_time_s']
+
             duration = properties['duration_s']
 
             if self.conn_method == 'REST':  # For using REST
