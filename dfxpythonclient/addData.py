@@ -42,7 +42,6 @@ class addData():
         for i in range(total_num_payload):
             with open(os.path.join(self.input_directory, 'payload' + str(i) + '.bin'), 'rb') as input_file:
                 fileContent = input_file.read()
-            #payload = base64.b64encode(fileContent).decode('utf-8')
             payload = fileContent
             with open(os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'), 'r') as input_file:
                 meta = json.load(input_file)
@@ -83,7 +82,7 @@ class addData():
                 data["Payload"] = base64.b64encode(payload).decode('utf-8')
 
             else:       # For using websockets
-                data = DataRequest()    # Need to reconfigure each chunk into a protocol buffer
+                data = DataRequest()    # Reconfigure each chunk into a protocol buffer
                 paramval = data.Params
                 paramval.ID = self.measurementID
 

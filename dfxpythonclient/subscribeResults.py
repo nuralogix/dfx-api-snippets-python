@@ -1,19 +1,25 @@
 import asyncio
+import os
 from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
-import uuid
 from google.protobuf.json_format import ParseDict
-import websockets
 import time
-
+import uuid
+import websockets
 
 class subscribeResults():
-    def __init__(self, measurementID, token, websocketobj, num_chunks):
+    def __init__(self, measurementID, token, websocketobj, num_chunks, out_folder=None):
         self.measurementID = measurementID
         self.token = token
         self.ws_url = websocketobj.ws_url
         self.num_chunks = num_chunks
         self.requestData = None
         self.ws_obj = websocketobj
+        self.out_folder = out_folder
+        if not out_folder:
+            self.out_folder = "./receive"
+
+        if not os.path.isdir(self.out_folder):  # Create directory if not there
+	        os.mkdir(self.out_folder)
         
     async def prepare_data(self):
         data = {}
@@ -51,7 +57,7 @@ class subscribeResults():
                 _id = response[0:10].decode('utf-8')
                 print("Data received; Chunk: "+str(counter) +
                         "; Status: "+str(statusCode))
-                with open('../data/result_'+str(counter)+'.bin', 'wb') as f:
+                with open(self.out_folder+'/result_'+str(counter)+'.bin', 'wb') as f:
                     f.write(response[13:])
 
         await self.ws_obj.handle_close()
@@ -62,7 +68,8 @@ if __name__ == '__main__':
     measurementID = ''
     token = ''
     ws_url = ''
+    out_folder = ''
     num_chunks = 2
-    sub = subscribeResults(measurementID, token, ws_url, num_chunks)
+    sub = subscribeResults(measurementID, token, ws_url, num_chunks, out_folder)
     loop = asyncio.get_event_loop()
     loop.run_until_complete(sub.subscribe())

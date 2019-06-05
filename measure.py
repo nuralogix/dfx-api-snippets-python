@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--studyID", help="StudyID")
 parser.add_argument("--token", help="user or device token")
 parser.add_argument("--payloadDir", help="Directory of payload files")
+parser.add_argument("--outputDir", help="Directory for received files", default="./receive")
 parser.add_argument("--connectionMethod", choices=["REST", "Websocket"], help="Connection method")
 parser.add_argument("--restUrl", help="DFX API REST url", default="https://qa.api.deepaffex.ai:9443")
 parser.add_argument("--wsUrl", help="DFX API Websocket url", default="wss://qa.api.deepaffex.ai:9080")
@@ -23,6 +24,7 @@ rest_url = args.restUrl
 ws_url = args.wsUrl
 conn_method = args.connectionMethod
 input_directory = args.payloadDir
+output_directory = args.outputDir
 
 loop = asyncio.get_event_loop()
 
@@ -41,7 +43,7 @@ else:
 
 # Create subscribeResults Object which prepares the subscribe request
 subscriberesultsObj = subscribeResults(
-    measurementID, token, websocketobj, adddataObj.num_chunks)
+    measurementID, token, websocketobj, adddataObj.num_chunks, out_folder=output_directory)
 
 loop.run_until_complete(websocketobj.connect_ws())    # Must first connect websocket
 
