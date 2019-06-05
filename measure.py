@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--studyID", help="StudyID")
 parser.add_argument("--token", help="user or device token")
 parser.add_argument("--payloadDir", help="Directory of payload files")
-parser.add_argument("--outputDir", help="Directory for received files", default="./receive")
+parser.add_argument("--outputDir", help="Directory for received files", default=None)
 parser.add_argument("--connectionMethod", choices=["REST", "Websocket"], help="Connection method")
 parser.add_argument("--restUrl", help="DFX API REST url", default="https://qa.api.deepaffex.ai:9443")
 parser.add_argument("--wsUrl", help="DFX API Websocket url", default="wss://qa.api.deepaffex.ai:9080")
@@ -29,7 +29,7 @@ output_directory = args.outputDir
 loop = asyncio.get_event_loop()
 
 # Create object for handling websockets
-websocketobj = WebsocketHandler(token, ws_url) 
+websocketobj = WebsocketHandler(token, ws_url)
 
 # Create Measurement
 createmeasurementObj = createMeasurement(studyID, token, rest_url)
