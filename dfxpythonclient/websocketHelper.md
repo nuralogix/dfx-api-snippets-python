@@ -62,10 +62,7 @@ async def connect_ws(self):
         self.ws = await self.handle_connect()
 
 async def handle_connect(self):
-    try:
-        ws = await websockets.client.connect(self.ws_url, extra_headers=self.headers)
-    except:
-        raise Exception("Cannot connect to websocket.")
+    ws = await websockets.client.connect(self.ws_url, extra_headers=self.headers)
     print(" Websocket Connected ")
     return ws
 ```
@@ -83,10 +80,8 @@ Sending messages is straightforward and only involves a call of `await self.ws.s
 
 ```python
 async def handle_send(self, content):
-    try:
-        await self.ws.send(content)
-    except:
-        raise Exception("Cannot send the package. Check the websocket connection.")
+    await self.ws.send(content)
+
 ```
 
 Receiving, however, is much more complex. For one WebSocket connection in one thread, there can be at most one call of `ws.recv()` at any given time, otherwise an error will be raised. Therefore, we utilize a mutual exclusion lock using a boolean `self.recv`. In order to make the `ws.recv()` call, we first check if `self.recv == True`. If yes, then we form a lock around `response = await self.ws.recv()` by setting `self.recv = False` first and then `self.recv = True` when it is done. Otherwise, the method returns nothing.

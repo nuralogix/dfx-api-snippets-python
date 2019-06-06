@@ -26,10 +26,7 @@ class WebsocketHandler():
             self.ws = await self.handle_connect()
 
     async def handle_connect(self):
-        try:
-            ws = await websockets.client.connect(self.ws_url, extra_headers=self.headers)
-        except:
-            raise Exception("Cannot connect to websocket.")
+        ws = await websockets.client.connect(self.ws_url, extra_headers=self.headers)
         print(" Websocket Connected ")
         return ws
 
@@ -39,13 +36,10 @@ class WebsocketHandler():
         return
 
     async def handle_send(self, content):
-        try:
-            await self.ws.send(content)
-        except:
-            raise Exception("Cannot send the package. Check the websocket connection.")
+        await self.ws.send(content)
 
     async def handle_recieve(self):
-        if self.recv == True:
+        if self.recv:
             # Mutual exclusion lock; prevents multiple calls of recv() on the same websocket connection
             self.recv = False
             response = await self.ws.recv()
