@@ -2,7 +2,6 @@ import asyncio
 import os
 from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest
 from google.protobuf.json_format import ParseDict
-import time
 import uuid
 import websockets
 
@@ -15,9 +14,9 @@ class subscribeResults():
         self.requestData = None
         self.ws_obj = websocketobj
         self.out_folder = out_folder
+
         if not out_folder:
             self.out_folder = "./receive"
-
         if not os.path.isdir(self.out_folder):  # Create directory if not there
 	        os.mkdir(self.out_folder)
         
@@ -29,7 +28,7 @@ class subscribeResults():
         data['Query'] = {}
         data['Params'] = dict(ID=self.measurementID)
 
-        websocketRouteID = '510'
+        websocketRouteID = '0510'
         requestMessageProto = ParseDict(
             data, SubscribeResultsRequest(), ignore_unknown_fields=True)
         self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode(
@@ -54,7 +53,6 @@ class subscribeResults():
                 counter += 1
                 response = self.ws_obj.chunks[0]
                 self.ws_obj.chunks = []
-                _id = response[0:10].decode('utf-8')
                 print("Data received; Chunk: "+str(counter) +
                         "; Status: "+str(statusCode))
                 with open(self.out_folder+'/result_'+str(counter)+'.bin', 'wb') as f:

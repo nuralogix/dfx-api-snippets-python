@@ -22,13 +22,14 @@ class WebsocketHandler():
         self.unknown = {}        # For storing messages not coming from a known websocket sender
 
     async def connect_ws(self):
-        self.ws = await self.handle_connect()
+        if not self.ws:
+            self.ws = await self.handle_connect()
 
     async def handle_connect(self):
         try:
             ws = await websockets.client.connect(self.ws_url, extra_headers=self.headers)
         except:
-            raise Exception("Cannot connect to websocket")
+            raise Exception("Cannot connect to websocket.")
         print(" Websocket Connected ")
         return ws
 
@@ -41,7 +42,7 @@ class WebsocketHandler():
         try:
             await self.ws.send(content)
         except:
-            raise Exception("Websocket not connected")
+            raise Exception("Cannot send the package. Check the websocket connection.")
 
     async def handle_recieve(self):
         if self.recv == True:
@@ -53,9 +54,7 @@ class WebsocketHandler():
             return
         if response:
             wsID = response[0:10].decode('utf-8')
-            # Sort out response messages by type
             if wsID != self.ws_ID:
-                #print("Received a package that didn't come from a local sender")
                 self.unknown[wsID] = response
 
             with open('./default.config') as json_file:  

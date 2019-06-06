@@ -7,6 +7,7 @@ from dfxpythonclient.websocketHelper import WebsocketHandler
 
 
 parser = argparse.ArgumentParser()
+
 parser.add_argument("--studyID", help="StudyID")
 parser.add_argument("--token", help="user or device token")
 parser.add_argument("--payloadDir", help="Directory of payload files")
@@ -45,7 +46,8 @@ else:
 subscriberesultsObj = subscribeResults(
     measurementID, token, websocketobj, adddataObj.num_chunks, out_folder=output_directory)
 
-loop.run_until_complete(websocketobj.connect_ws())    # Must first connect websocket
+# Must first connect websocket
+loop.run_until_complete(websocketobj.connect_ws())
 
 # Add tasks to event loop
 # In one thread, can only make one addData and one subscribeResults call at a time

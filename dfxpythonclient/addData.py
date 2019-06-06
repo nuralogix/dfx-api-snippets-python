@@ -6,9 +6,7 @@ import json
 import time
 from glob import glob
 import os
-import uuid
 
-from google.protobuf.json_format import ParseDict
 from dfxpythonclient.adddata_pb2 import DataRequest
 from dfxpythonclient.websocketHelper import WebsocketHandler
 
@@ -62,7 +60,6 @@ class addData():
                 chunkOrder = properties['chunk_number']
                 startTime = properties['start_time_s']
                 endTime = properties['end_time_s']
-
             duration = properties['duration_s']
 
             if self.conn_method == 'REST':  # For using REST
@@ -96,6 +93,7 @@ class addData():
                 meta['StartTime'] = startTime
                 meta['EndTime'] = endTime
                 meta['Duration'] = data.Duration
+
                 data.Meta = json.dumps(meta).encode()
                 data.Payload = bytes(payload)
 
@@ -137,11 +135,10 @@ class addData():
                     await asyncio.sleep(chunk['Duration'])
 
         else:
-            actionID = '506'
+            actionID = '0506'
             wsID = self.ws_obj.ws_ID
             for chunk in self.chunks:
                 content = f'{actionID:4}{wsID:10}'.encode() + chunk.SerializeToString()
-
                 await self.ws_obj.handle_send(content)
                 while True:
                     try:
@@ -152,22 +149,17 @@ class addData():
                         response = self.ws_obj.addDataStats[0]
                         self.ws_obj.addDataStats = []
                         break
-
                 status_code = response[10:13].decode('utf-8')
-
                 print("*"*10)
                 print("addData response code: ", status_code)
                 print("addData response body: ", response)
                 print("*"*10)
-
                 if status_code != '200':
                     print("Error adding data. Please check your inputs.")
                     return
-
                 if "LAST" not in chunk.Action:
                     print("sleep for the chunk duration")
                     await asyncio.sleep(chunk.Duration)
-
         print("Done adding data")
 
 
