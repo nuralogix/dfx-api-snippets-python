@@ -1,6 +1,6 @@
-import asyncio
 import json
 import uuid
+
 import websockets
 
 
@@ -10,7 +10,7 @@ class WebsocketHandler():
         self.ws_url = websocket_url
         self.headers = dict(Authorization="Bearer {}".format(self.token))
         self.ws = None
-        self.ws_ID = uuid.uuid4().hex[:10]      # Use same ws_ID for all connections
+        self.ws_ID = uuid.uuid4().hex[:10]  # Use same ws_ID for all connections
 
         # Use this to form a mutual exclusion lock
         self.recv = True
@@ -19,7 +19,7 @@ class WebsocketHandler():
         self.addDataStats = []
         self.subscribeStats = []
         self.chunks = []
-        self.unknown = {}        # For storing messages not coming from a known websocket sender
+        self.unknown = {}  # For storing messages not coming from a known websocket sender
 
     async def connect_ws(self):
         if not self.ws:
@@ -57,9 +57,9 @@ class WebsocketHandler():
             if wsID != self.ws_ID:
                 self.unknown[wsID] = response
 
-            with open('./default.config') as json_file:  
+            with open('./default.config') as json_file:
                 data = json.load(json_file)
-            
+
                 if len(response) == int(data["Subscribe_status"]):
                     self.subscribeStats.append(response)
                 elif len(response) <= int(data["Adddata_status"]):
