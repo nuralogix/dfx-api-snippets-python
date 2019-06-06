@@ -1,14 +1,16 @@
-import functools
 import asyncio
 import base64
-import requests
+import functools
 import json
+import os
 import time
 from glob import glob
-import os
+
+import requests
 
 from dfxpythonclient.adddata_pb2 import DataRequest
 from dfxpythonclient.websocketHelper import WebsocketHandler
+
 
 class addData():
     def __init__(self, measurementID, token, server_url, websocketobj, input_directory):
@@ -19,7 +21,7 @@ class addData():
         self.chunks = []
         self.ws_obj = websocketobj
         if websocketobj:
-            self.conn_method = 'ws'
+            self.conn_method = 'Websocket'
         else:
             self.conn_method = 'REST'
         self.prepare_data()
@@ -29,18 +31,15 @@ class addData():
         return len(self.chunks)
 
     def prepare_data(self):
-        total_num_payload = len(
-            glob(os.path.join(self.input_directory, 'payload*.bin')))
-        total_num_meta = len(
-            glob(os.path.join(self.input_directory, 'metadata*.bin')))
-        total_num_properties = len(
-            glob(os.path.join(self.input_directory, 'properties*.json')))
+        total_num_payload = len(glob(os.path.join(self.input_directory, 'payload*.bin')))
+        total_num_meta = len(glob(os.path.join(self.input_directory, 'metadata*.bin')))
+        total_num_properties = len(glob(os.path.join(self.input_directory, 'properties*.json')))
         if total_num_meta != total_num_payload != total_num_properties:
             raise ValueError('Missing files')
         for i in range(total_num_payload):
             with open(os.path.join(self.input_directory, 'payload' + str(i) + '.bin'), 'rb') as input_file:
                 fileContent = input_file.read()
-            payload = fileContent
+                payload = fileContent
             with open(os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'), 'r') as input_file:
                 meta = json.load(input_file)
             with open(os.path.join(self.input_directory, 'properties' + str(i) + '.json'), 'r') as input_file:
@@ -78,16 +77,16 @@ class addData():
                 data['Meta'] = json.dumps(meta)
                 data["Payload"] = base64.b64encode(payload).decode('utf-8')
 
-            else:       # For using websockets
-                data = DataRequest()    # Reconfigure each chunk into a protocol buffer
+            else:  # For using websockets
+                data = DataRequest()  # Reconfigure each chunk into a protocol buffer
                 paramval = data.Params
                 paramval.ID = self.measurementID
 
                 data.ChunkOrder = chunkOrder
-                data.Action     = action
-                data.StartTime  = startTime
-                data.EndTime    = endTime
-                data.Duration   = duration
+                data.Action = action
+                data.StartTime = startTime
+                data.EndTime = endTime
+                data.Duration = duration
                 # Additional meta fields !
                 meta['Order'] = chunkOrder
                 meta['StartTime'] = startTime
@@ -101,35 +100,33 @@ class addData():
 
     def sendSync(self):
         if self.conn_method == 'REST':
-            url = self.server_url + "/measurements/"+self.measurementID+"/data"
+            url = self.server_url + "/measurements/" + self.measurementID + "/data"
             headers = dict(Authorization="Bearer {}".format(self.token))
             headers['Content-Type'] = "application/json"
             for chunk in self.chunks:
                 response = requests.post(url, json=chunk, headers=headers)
-                print("*"*10)
+                print("*" * 10)
                 print("addData response code: ", response.status_code)
                 print("addData response body: ", response.json())
-                print("*"*10)
+                print("*" * 10)
                 if "LAST" not in chunk['Action']:
                     print("sleep for the chunk duration")
                     time.sleep(chunk['Duration'])
-            print("Done adding data")
 
     async def sendAsync(self):
         if self.conn_method == 'REST':
-            url = self.server_url + "/measurements/"+self.measurementID+"/data"
+            url = self.server_url + "/measurements/" + self.measurementID + "/data"
             headers = dict(Authorization="Bearer {}".format(self.token))
             headers['Content-Type'] = "application/json"
             for chunk in self.chunks:
-                requestFunction = functools.partial(
-                    requests.post, url=url, json=chunk, headers=headers)
+                requestFunction = functools.partial(requests.post, url=url, json=chunk, headers=headers)
                 loop = asyncio.get_event_loop()
                 future = loop.run_in_executor(None, requestFunction)
                 response = await future
-                print("*"*10)
+                print("*" * 10)
                 print("addData response code: ", response.status_code)
                 print("addData response body: ", response.json())
-                print("*"*10)
+                print("*" * 10)
                 if "LAST" not in chunk['Action']:
                     print("sleep for the chunk duration")
                     await asyncio.sleep(chunk['Duration'])
@@ -150,17 +147,16 @@ class addData():
                         self.ws_obj.addDataStats = []
                         break
                 status_code = response[10:13].decode('utf-8')
-                print("*"*10)
+                print("*" * 10)
                 print("addData response code: ", status_code)
                 print("addData response body: ", response)
-                print("*"*10)
+                print("*" * 10)
                 if status_code != '200':
                     print("Error adding data. Please check your inputs.")
                     return
                 if "LAST" not in chunk.Action:
                     print("sleep for the chunk duration")
                     await asyncio.sleep(chunk.Duration)
-        print("Done adding data")
 
 
 if __name__ == '__main__':
