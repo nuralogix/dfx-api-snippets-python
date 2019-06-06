@@ -19,7 +19,7 @@ class subscribeResults():
             self.out_folder = "./receive"
         if not os.path.isdir(self.out_folder):  # Create directory if not there
 	        os.mkdir(self.out_folder)
-        
+
     async def prepare_data(self):
         data = {}
         wsID = self.ws_obj.ws_ID
@@ -33,14 +33,14 @@ class subscribeResults():
             data, SubscribeResultsRequest(), ignore_unknown_fields=True)
         self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode(
         ) + requestMessageProto.SerializeToString()
- 
+
     async def subscribe(self):
         print("Subscribing to results")
         await self.prepare_data()
         await self.ws_obj.handle_send(self.requestData)
 
         counter = 0
-        while counter < self.num_chunks:            
+        while counter < self.num_chunks:
             await self.ws_obj.handle_recieve()
             if self.ws_obj.subscribeStats:
                 response = self.ws_obj.subscribeStats[0]
@@ -55,8 +55,10 @@ class subscribeResults():
                 self.ws_obj.chunks = []
                 print("Data received; Chunk: "+str(counter) +
                         "; Status: "+str(statusCode))
-                with open(self.out_folder+'/result_'+str(counter)+'.bin', 'wb') as f:
-                    f.write(response[13:])
+
+                if self.out_folder:
+                    with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
+                        f.write(response[13:])
 
         await self.ws_obj.handle_close()
         return
