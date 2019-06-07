@@ -1,6 +1,8 @@
 import json
 import uuid
+
 import websockets
+
 
 class WebsocketHandler():
     def __init__(self, token, websocket_url):
@@ -17,7 +19,8 @@ class WebsocketHandler():
         self.addDataStats = []
         self.subscribeStats = []
         self.chunks = []
-        self.unknown = {}  # For storing messages not coming from a known websocket sender
+        self.unknown = {
+        }  # For storing messages not coming from a known websocket sender
 
     async def connect_ws(self):
         if not self.ws:

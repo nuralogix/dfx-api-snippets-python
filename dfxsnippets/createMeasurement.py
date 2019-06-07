@@ -1,5 +1,7 @@
 import json
+
 import requests
+
 
 class createMeasurement():
     def __init__(self, studyID, token, rest_url, resolution=0):

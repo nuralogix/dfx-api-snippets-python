@@ -32,16 +32,21 @@ class addData():
     def prepare_data(self):
         total_num_payload = len(glob(os.path.join(self.input_directory, 'payload*.bin')))
         total_num_meta = len(glob(os.path.join(self.input_directory, 'metadata*.bin')))
-        total_num_properties = len(glob(os.path.join(self.input_directory, 'properties*.json')))
+        total_num_properties = len(
+            glob(os.path.join(self.input_directory, 'properties*.json')))
         if total_num_meta != total_num_payload != total_num_properties:
             raise ValueError('Missing files')
         for i in range(total_num_payload):
-            with open(os.path.join(self.input_directory, 'payload' + str(i) + '.bin'), 'rb') as input_file:
+            with open(os.path.join(self.input_directory, 'payload' + str(i) + '.bin'),
+                      'rb') as input_file:
                 fileContent = input_file.read()
                 payload = fileContent
-            with open(os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'), 'r') as input_file:
+            with open(os.path.join(self.input_directory, 'metadata' + str(i) + '.bin'),
+                      'r') as input_file:
                 meta = json.load(input_file)
-            with open(os.path.join(self.input_directory, 'properties' + str(i) + '.json'), 'r') as input_file:
+            with open(
+                    os.path.join(self.input_directory, 'properties' + str(i) + '.json'),
+                    'r') as input_file:
                 properties = json.load(input_file)
             if i == 0 and total_num_payload > 1:
                 action = 'FIRST::PROCESS'
@@ -118,7 +123,10 @@ class addData():
             headers = dict(Authorization="Bearer {}".format(self.token))
             headers['Content-Type'] = "application/json"
             for chunk in self.chunks:
-                requestFunction = functools.partial(requests.post, url=url, json=chunk, headers=headers)
+                requestFunction = functools.partial(requests.post,
+                                                    url=url,
+                                                    json=chunk,
+                                                    headers=headers)
                 loop = asyncio.get_event_loop()
                 future = loop.run_in_executor(None, requestFunction)
                 response = await future
