@@ -22,14 +22,16 @@ class createMeasurement():
         try:
             response = requests.post(url, data=json.dumps(data), headers=headers)
         except:
-            raise ValueError(' Can not create measurement on server')
-            return ''
+            raise ValueError(' Cannot create measurement on server')
         print("*" * 10)
         print("createMeasurement response code: ", response.status_code)
         print("createMeasurement response body: ", response.json())
         print("*" * 10)
-        measurementID = response.json()['ID']
-        return measurementID
+        try:
+            measurementID = response.json()['ID']
+            return measurementID
+        except:
+            raise ValueError(' Cannot create measurement on server')
 
 
 if __name__ == '__main__':

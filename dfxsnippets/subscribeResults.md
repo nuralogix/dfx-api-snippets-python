@@ -3,26 +3,31 @@
 This class shows one way of receiving the results for a `measurementID` by
 creating a subscribed channel to the DFX API server via WebSockets.
 
+*One may receive multiple results if one sends multiple data chunks.
+The intermediate results may have less result signals than the final result
+depends on the duration of each chunk and the number of chunks*
+
 It depends upon the following packages:
 
 ```python
-import asyncio # the Asynchronous io
-from dfxsnippets.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
-import uuid # Used to generate uuid
+import asyncio  # Python asynchronous io
+import os       # For joining paths
+import uuid     # Used to generate uuid
+
 from google.protobuf.json_format import ParseDict # used to parse python dictionary to protobuf
-import websockets # Websocket
+from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
 ```
 
 ## Basic usage
 
-Create the `subscribeResults` object with a `measurementID`, a token and a
-WebSocket URL to the DFX API server.
+Create the `subscribeResults` object with a `measurementID`, a token,
+a `websocketHandler` object, number of chunks, and an optional output folder.
 
 ```python
-sub = subscribeResults(measurementID, token, ws_url, num_chunks)
+sub = subscribeResults(measurementID, token, websocketobj, num_chunks, out_folder=folder)
 ```
 
-Add the `sub()` method to the event loop:
+Add the `subscribe()` method to the event loop:
 
 ```python
 loop = asyncio.get_event_loop()
@@ -37,14 +42,28 @@ depends on the duration of each chunk and the number of chunks*
 
 ### Constructor
 
-Let's examine the constructor. It requires a `measurementID` (the one you
-already `addData`ed for and are expecting results), a token issued by the
-DeepAffex server, the URL to the WebSocket address, and the total number of
-chunks you sent to the server (so it knows when to disconnect.)
+Let's examine the constructor of the Class. It requires a `measurementID` (the one you
+already have in addData and expecting result), a `token` issued by the DeepAffex server,
+a `websocketHandler` object, the total number of chunks `num_chunks` you sent to the
+server(so it knows when to disconnect) in use, and an optional output folder `out_folder`
+for writing the output files.
 
 ```python
-def __init__(self, measurementID, token, ws_url, num_chunks)
+def __init__(self, measurementID, token, websocketobj, num_chunks, out_folder=None):
+    self.measurementID = measurementID
+    self.token = token
+    self.ws_url = websocketobj.ws_url
+    self.num_chunks = num_chunks
+    self.requestData = None
+    self.ws_obj = websocketobj
+    self.out_folder = out_folder
+
+    if self.out_folder and not os.path.isdir(self.out_folder):
+        os.mkdir(self.out_folder)
 ```
+
+Note that if no `out_folder` is specified at input, no output is saved.
+If the specified output folder is nonexistent, it would create the folder.
 
 ### `prepare_data`
 
@@ -53,16 +72,18 @@ be sent through the WebSocket.
 
 ```python
 def prepare_data(self):
-    requestID=uuid.uuid4().hex[:10]
     data = {}
+    wsID = self.ws_obj.ws_ID  # Get websocket ID from the WebsocketHandler object
+    requestID = uuid.uuid4().hex[:10]
     data['RequestID'] = requestID
     data['Query'] = {}
     data['Params'] = dict(ID=self.measurementID)
 
-    wsID = uuid.uuid4().hex[:10] # Make this ID sequential or variable
-    websocketRouteID = '510'
-    requestMessageProto = ParseDict(data, SubscribeResultsRequest(), ignore_unknown_fields=True)
-    self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode() + requestMessageProto.SerializeToString()
+    websocketRouteID = '0510'
+    requestMessageProto = ParseDict(
+        data, SubscribeResultsRequest(), ignore_unknown_fields=True)
+    self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode(
+    ) + requestMessageProto.SerializeToString()  # Data to be sent
 ```
 
 As mentioned in the DFX API documentation, you will need to provide a unique
@@ -74,54 +95,55 @@ It then uses the protobuf definition (compiled version) and the `SerializeToStri
 provided by protobuf to create the data to be sent and put it into the WebSocket
 request data's `[10:]` buffer. The `[0:4]` is the unique WebSocket ID.
 
-### `sub`
 
-In the `sub()` method, we use the token and the URL to create a WebSocket
-connection, aynchronously.
+### `subscribe`
 
-```python
-headers=dict(Authorization="Bearer {}".format(self.token))
-websocket = await websockets.client.connect(self.ws_url, extra_headers=headers)
-```
-It then send the `requestData` prepared above to the WebSocket asynchronously.
+In the `subscribe()` method, we prepare the data and call `handle_send`, aynchronously.
+This sends the prepared `requestData` prepared above through websocket asynchronously.
 
 ```python
-await websocket.send(self.requestData)
+await self.prepare_data()
+await self.ws_obj.handle_send(self.requestData)
 ```
 
-It then asynchronously waits for response data incoming via that WebSocket (it
-will time out if nothing is received in 40 seconds) in a `while` loop:
+It then polls continuously until all the chunks have been received, indicated by a counter.
+It checks two stacks, `self.ws_obj.subscribeStats` for confirmation messages, and
+`self.ws_obj.chunks` for payload chunks, and handles each case differently.
 
 ```python
-response = await asyncio.wait_for(websocket.recv(), timeout=40)
+counter = 0
+while counter < self.num_chunks:
+    await self.ws_obj.handle_recieve()
+    if self.ws_obj.subscribeStats:  # If a confirmation status is received
+        response = self.ws_obj.subscribeStats[0]
+        self.ws_obj.subscribeStats = []
+        statusCode = response[10:13].decode('utf-8')
+        if statusCode != '200':  # Error
+            print("Status:", statusCode)
+
+    elif self.ws_obj.chunks:  # If a chunk is received
+        counter += 1
+        response = self.ws_obj.chunks[0]
+        self.ws_obj.chunks = []
+        print("Data received; Chunk: "+str(counter) + "; Status: "+str(statusCode))
+        if self.out_folder:     # Save only if an output folder is specified
+            with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
+                f.write(response[13:])
 ```
 
-The first response is a "connection established" ack, we can ignore it.
+If a "connection established" confirmation is received in `self.ws_obj.subscribeStats`
+(usually the first response only), we can ignore it unless there is an error.
 
-The unique WebSocket id and status code can be extracted in the response in
-those certain bytes
-
-```python
-_id = response[0:10].decode('utf-8')
-statusCode = response[10:13].decode('utf-8')
-```
-
-The actual result are in the `[13:]` part and we just save them into the disk
-so you can call SDK to decode them later:
+The actual result is the `[13:]` part and we can just save them into the
+`self.output_folder` specified so you can call SDK to decode later:
 
 ```python
-print("Data received; Chunk: "+str(counter)+"; Status: "+str(statusCode))
-with open('./result_'+str(counter)+'.bin', 'wb') as f:
+with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
     f.write(response[13:])
 ```
 
-It then increments the counter and when we have received all the chunks results,
-it breaks the `while` loop and closes the WebSocket:
+Finally, when all the chunks have been received, we close the websocket by calling
 
 ```python
-counter += 1
-if counter > self.num_chunks:
-    print(" Closing websocket ")
-    await websocket.close()
-    break
+await self.ws_obj.handle_close()
 ```
