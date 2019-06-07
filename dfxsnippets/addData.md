@@ -16,8 +16,8 @@ import requests         #send http request
 import time             #for synchronous
 from glob import glob   #for gathering the payload files
 
-from dfxpythonclient.adddata_pb2 import DataRequest	 # proto object for addData request
-from dfxpythonclient.websocketHelper import WebsocketHandler  # for handling websockets activity
+from dfxsnippets.adddata_pb2 import DataRequest	 # proto object for addData request
+from dfxsnippets.websocketHelper import WebsocketHandler  # for handling websockets activity
 ```
 
 ## Basic usage
