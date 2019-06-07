@@ -19,17 +19,13 @@ cm_obj = createMeasurement(studyID, token, rest_url, resolution=0)
 measurementID = cm_obj.create()
 ```
 
-*Notice how we set `resolution=0`, which is the default value. It means that you
-will get the average result back for this measurement, e.g. average heart rate
-of the durarion. If you want to have the results come back as vectors, usually
-time series, you can set `resolution=100`*
+*Notice how we set `resolution=0`, which is the default value. It means that you will get the average result back for this measurement, e.g. average heart rate of the durarion. If you want to have the results come back as vectors, usually time series, you can set `resolution=100`*
 
 ## Understanding the class
 
 ### Constructor
 
-Let's examine the constructor. It requires a `studyID`, a token issued by the
-Deepaffex server, and the URL of the REST API in use.
+Let's examine the constructor. It requires a `studyID`, a token issued by the Deepaffex server, and the URL of the REST API in use.
 
 ```python
 def __init__(self, studyID, token, rest_url):
@@ -41,8 +37,7 @@ def __init__(self, studyID, token, rest_url):
 
 ### `create`
 
-The `create()` method of the class will then prepare the request header and body
-and send the request. Here are the steps it takes...
+The `create()` method of the class will then prepare the request header and body and send the request. Here are the steps it takes...
 
 1. Creates the URL for the endpoint
 
