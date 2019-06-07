@@ -7,14 +7,14 @@ process, and the base URL of the DFX API REST service
 This class needs the following packages:
 
 ```python
-import functools        #construct an async function
 import asyncio          #python's asyncio
 import base64           #base64 format of the payload encoding
-import requests         #send http request
+import functools        #construct an async function
 import json             #json utilities
+import os               #join the path
+import requests         #send http request
 import time             #for synchronous
 from glob import glob   #for gathering the payload files
-import os               #join the path
 
 from dfxpythonclient.adddata_pb2 import DataRequest	 # proto object for addData request
 from dfxpythonclient.websocketHelper import WebsocketHandler  # for handling websockets activity
@@ -52,6 +52,17 @@ DFX-SDK generated payload files (together with meta and properties files) in use
 
 ```python
 def __init__(self, measurementID, token, server_url, websocketobj, input_directory):
+    self.measurementID = measurementID
+    self.token = token
+    self.server_url = server_url
+    self.input_directory = input_directory
+    self.chunks = []
+    self.ws_obj = websocketobj
+    if websocketobj:
+        self.conn_method = 'Websocket'
+    else:
+        self.conn_method = 'REST'
+    self.prepare_data()
 ```
 
 ### `prepare_data`
@@ -239,16 +250,16 @@ There are two ways of sending:
     response from the websocket.
 
     ```python
-        while True:
-            try:
-                await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=10)
-            except TimeoutError:
-                break
-            if self.ws_obj.addDataStats:
-                response = self.ws_obj.addDataStats[0]
-                self.ws_obj.addDataStats = []
-                break
-        status_code = response[10:13].decode('utf-8')
+    while True:
+        try:
+            await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=10)
+        except TimeoutError:
+            break
+        if self.ws_obj.addDataStats:
+            response = self.ws_obj.addDataStats[0]
+            self.ws_obj.addDataStats = []
+            break
+    status_code = response[10:13].decode('utf-8')
     ```
 
     It keeps polling until the stack `self.ws_obj.addDataStats` receives something,

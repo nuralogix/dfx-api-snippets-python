@@ -3,13 +3,12 @@ import base64
 import functools
 import json
 import os
+import requests
 import time
 from glob import glob
 
-import requests
-
-from dfxpythonclient.adddata_pb2 import DataRequest
-from dfxpythonclient.websocketHelper import WebsocketHandler
+from dfxsnippets.adddata_pb2 import DataRequest
+from dfxsnippets.websocketHelper import WebsocketHandler
 
 
 class addData():

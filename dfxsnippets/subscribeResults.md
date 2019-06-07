@@ -10,12 +10,12 @@ depends on the duration of each chunk and the number of chunks*
 It depends upon the following packages:
 
 ```python
-import asyncio # the Asynchronous io
-import os
-from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
+import asyncio  # Python asynchronous io
+import os       # For joining paths
+import uuid     # Used to generate uuid
+
 from google.protobuf.json_format import ParseDict # used to parse python dictionary to protobuf
-import uuid # Used to generate uuid
-import websockets # Websocket
+from dfxpythonclient.measurement_pb2 import SubscribeResultsRequest # compiled version of the protobuf request to subscribe to the results
 ```
 
 ## Basic usage
@@ -58,9 +58,7 @@ def __init__(self, measurementID, token, websocketobj, num_chunks, out_folder=No
     self.ws_obj = websocketobj
     self.out_folder = out_folder
 
-    if not out_folder:
-        self.out_folder = "./receive"
-    if not os.path.isdir(self.out_folder):  # Create directory if not there
+    if self.out_folder and not os.path.isdir(self.out_folder):
         os.mkdir(self.out_folder)
 ```
 
@@ -122,13 +120,15 @@ while counter < self.num_chunks:
         statusCode = response[10:13].decode('utf-8')
         if statusCode != '200':  # Error
             print("Status:", statusCode)
+
     elif self.ws_obj.chunks:  # If a chunk is received
         counter += 1
         response = self.ws_obj.chunks[0]
         self.ws_obj.chunks = []
         print("Data received; Chunk: "+str(counter) + "; Status: "+str(statusCode))
-        with open(self.out_folder+'/result_'+str(counter)+'.bin', 'wb') as f:	# Save the data locally
-            f.write(response[13:])
+        if self.out_folder:     # Save only if an output folder is specified
+            with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
+                f.write(response[13:])
 ```
 
 If a "connection established" confirmation is received in `self.ws_obj.subscribeStats`
@@ -138,8 +138,7 @@ The actual result is the `[13:]` part and we can just save them into the
 `self.output_folder` specified so you can call SDK to decode later:
 
 ```python
-print("Data received; Chunk: "+str(counter)+"; Status: "+str(statusCode))
-with open(self.out_folder+'/result_'+str(counter)+'.bin', 'wb') as f:
+with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
     f.write(response[13:])
 ```
 

@@ -1,8 +1,6 @@
 import json
 import uuid
-
 import websockets
-
 
 class WebsocketHandler():
     def __init__(self, token, websocket_url):

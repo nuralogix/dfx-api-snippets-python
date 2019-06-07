@@ -8,7 +8,6 @@ through asynchronous programming.
 It depends upon the following packages:
 
 ```python
-import asyncio    # Asynchronous io
 import json       # For handling json formats
 import uuid       # Used to generate uuid
 import websockets # Websockets library

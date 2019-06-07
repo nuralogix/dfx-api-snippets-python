@@ -3,7 +3,6 @@ import os
 import uuid
 
 from google.protobuf.json_format import ParseDict
-
 from dfxsnippets.measurement_pb2 import SubscribeResultsRequest
 
 
