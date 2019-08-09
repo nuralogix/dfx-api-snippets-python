@@ -34,11 +34,18 @@ if __name__ == "__main__":
     input_directory = args.payloadDir
     output_directory = args.outputDir
 
-    # Create the async event loop
+    # Create the async event loop and list of tasks
     loop = asyncio.get_event_loop()
+    tasks = []
 
     # Create object for handling websockets
     websocketobj = WebsocketHandler(token, ws_url)
+
+    # Establish websocket connection (must be done at the start)
+    # Note: Will time out in 10 seconds if connection is not established
+    tasks.append(loop.create_task(websocketobj.connect_ws()))
+    wait_tasks = asyncio.wait(tasks, timeout=10)
+    loop.run_until_complete(wait_tasks)
 
     # Create a measurement object and get a measurement ID
     createmeasurementObj = createMeasurement(studyID, token, rest_url)
@@ -58,14 +65,14 @@ if __name__ == "__main__":
                                            adddataObj.num_chunks,
                                            out_folder=output_directory)
 
-    # Must first connect websocket
-    loop.run_until_complete(websocketobj.connect_ws())
-
     # Add tasks to event loop
-    tasks = []
     tasks.append(loop.create_task(adddataObj.sendAsync()))
     tasks.append(loop.create_task(subscriberesultsObj.subscribe()))
 
+    # Run add data and subscribe to results
     wait_tasks = asyncio.wait(tasks)
     loop.run_until_complete(wait_tasks)
+
+    # Close websocket connection at the end
+    loop.run_until_complete(websocketobj.handle_close())
     loop.close()
