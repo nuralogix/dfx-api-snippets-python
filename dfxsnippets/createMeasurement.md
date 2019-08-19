@@ -28,7 +28,7 @@ measurementID = cm_obj.create()
 Let's examine the constructor. It requires a `studyID`, a token issued by the Deepaffex server, and the URL of the REST API in use.
 
 ```python
-def __init__(self, studyID, token, rest_url):
+def __init__(self, studyID:str, token:str, rest_url:str):
     self.studyID = studyID
     self.token = token
     self.rest_url = rest_url
