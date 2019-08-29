@@ -16,18 +16,16 @@ if __name__ == "__main__":
     parser.add_argument("--username", help="UserName")
     parser.add_argument("--password", help="Password")
     parser.add_argument("--payloadDir", help="Directory of payload files")
-    parser.add_argument("--restUrl",
-                        help="DFX API REST url",
-                        default="https://qa.api.deepaffex.ai:9443")
-    parser.add_argument("--wsUrl",
-                        help="DFX API Websocket url",
-                        default="wss://qa.api.deepaffex.ai:9080")
+    parser.add_argument("--server",
+                    help="Name of server to use",
+                    choices=["qa", "dev", "prod", "prod-cn"],
+                    default="dev")
     parser.add_argument("--outputDir", help="Directory for received files", default=None)
     parser.add_argument("--connectionMethod",
                         help="Connection method",
                         choices=["REST", "Websocket"],
                         default="REST")
-    parser.add_argument("--mode", help="Mode", default="DISCRETE")
+    parser.add_argument("--mode", help="Measurement mode", default="DISCRETE")
 
     args = parser.parse_args()
 
@@ -35,12 +33,25 @@ if __name__ == "__main__":
     license_key = args.licenseKey
     username = args.username
     password = args.password
-    rest_url = args.restUrl
-    ws_url = args.wsUrl
     conn_method = args.connectionMethod
     input_directory = args.payloadDir
     output_directory = args.outputDir
     mode = args.mode
+    server = args.server
+
+    # INTERNAL: Get server urls given the server name
+    if server == "qa":
+        rest_url = "https://qa.api.deepaffex.ai:9443"
+        ws_url = "wss://qa.api.deepaffex.ai:9080"
+    elif server == "dev":
+        rest_url = "https://dev.api.deepaffex.ai:9443"
+        ws_url = "wss://dev.api.deepaffex.ai:9080"
+    elif server == "prod":
+        rest_url = "https://api.deepaffex.ai:9443"
+        ws_url = "wss://api.deepaffex.ai:9080"
+    elif server == "prod-cn":
+        rest_url = "https://api.deepaffex.cn:9443"
+        ws_url = "wss://api.deepaffex.cn:9080"
 
     # Register License and get device token
     data = {
