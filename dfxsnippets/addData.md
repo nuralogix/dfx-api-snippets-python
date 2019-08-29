@@ -51,7 +51,7 @@ the URL to the REST API, a `websocketHandler` object, and a input directory of
 DFX-SDK generated payload files (together with meta and properties files) in use.
 
 ```python
-def __init__(self, measurementID, token, server_url, websocketobj, input_directory):
+def __init__(self, measurementID:str, token:str, server_url:str, websocketobj:websocketHelper, input_directory:str):
     self.measurementID = measurementID
     self.token = token
     self.server_url = server_url
@@ -124,11 +124,16 @@ field names. For example, the `chunk_number` maybe `chunkNumber` etc.. the
 naming differences are handled here:*
 
 ```python
-if (meta["dfxsdk"] < "4.0"):
-    chunkOrder = properties['chunkNumber']
-    startTime = properties['startTime_s']
-    endTime = properties['endTime_s']
-else:
+try:
+    if (meta["dfxsdk"] < "4.0"):
+        chunkOrder = properties['chunkNumber']
+        startTime = properties['startTime_s']
+        endTime = properties['endTime_s']
+    else:
+        chunkOrder = properties['chunk_number']
+        startTime = properties['start_time_s']
+        endTime = properties['end_time_s']
+except:
     chunkOrder = properties['chunk_number']
     startTime = properties['start_time_s']
     endTime = properties['end_time_s']
@@ -252,7 +257,7 @@ There are two ways of sending:
     ```python
     while True:
         try:
-            await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=10)
+            await asyncio.wait_for(self.ws_obj.handle_recieve(), timeout=2)
         except TimeoutError:
             break
         if self.ws_obj.addDataStats:
