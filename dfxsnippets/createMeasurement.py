@@ -4,11 +4,12 @@ import requests
 
 
 class createMeasurement():
-    def __init__(self, studyID, token, rest_url, resolution=0):
+    def __init__(self, studyID, token, rest_url, mode, resolution=0):
         self.studyID = studyID
         self.token = token
         self.rest_url = rest_url
         self.resolution = resolution
+        self.mode = mode
 
     def create(self):
         url = self.rest_url + "/measurements"
@@ -16,6 +17,7 @@ class createMeasurement():
         data["StudyID"] = self.studyID
         data["Action"] = self.token
         data["Resolution"] = self.resolution
+        data["Mode"] = self.mode
 
         headers = dict(Authorization="Bearer {}".format(self.token))
         headers['Content-Type'] = "application/json"
@@ -39,5 +41,6 @@ if __name__ == '__main__':
     studyID = ''
     token = ''
     rest_url = ''
-    cm = createMeasurement(studyID, token, rest_url, resolution=0)
+    mode = ''
+    cm = createMeasurement(studyID, token, rest_url, mode, resolution=0)
     cm.create()
