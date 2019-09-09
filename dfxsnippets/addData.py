@@ -50,7 +50,8 @@ class addData():
             else:
                 action = 'CHUNK::PROCESS'
 
-            if (meta["dfxsdk"] < "4.0"):
+            # if (meta["dfxsdk"] < "4.0"):
+            if (meta["libdfx"] < "4.0"):
                 chunkOrder = properties['chunkNumber']
                 startTime = properties['startTime_s']
                 endTime = properties['endTime_s']
@@ -109,7 +110,7 @@ class addData():
                 print("addData response body: ", response.json())
                 print("*" * 10)
                 if "LAST" not in chunk['Action']:
-                    print("sleep for the chunk duration")
+                    print("sleep for the chunk duration--REST_SendSync")
                     time.sleep(chunk['Duration'])
 
     async def sendAsync(self):
@@ -127,7 +128,7 @@ class addData():
                 print("addData response body: ", response.json())
                 print("*" * 10)
                 if "LAST" not in chunk['Action']:
-                    print("sleep for the chunk duration")
+                    print("sleep for the chunk duration--REST_SendAsync")
                     await asyncio.sleep(chunk['Duration'])
 
         else:
@@ -148,13 +149,13 @@ class addData():
                 status_code = response[10:13].decode('utf-8')
                 print("*" * 10)
                 print("addData response code: ", status_code)
-                print("addData response body: ", response)
+                print("addData response body: ", response)            
                 print("*" * 10)
                 if status_code != '200':
                     print("Error adding data. Please check your inputs.")
                     return
                 if "LAST" not in chunk.Action:
-                    print("sleep for the chunk duration")
+                    print("sleep for the chunk duration--SendAsync: ", chunk.Duration)
                     await asyncio.sleep(chunk.Duration)
 
 

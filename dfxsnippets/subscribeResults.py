@@ -1,6 +1,8 @@
 import asyncio
 import os
 import uuid
+import json
+import datetime
 
 from google.protobuf.json_format import ParseDict
 from dfxsnippets.measurement_pb2 import SubscribeResultsRequest
@@ -15,6 +17,7 @@ class subscribeResults():
         self.requestData = None
         self.ws_obj = websocketobj
         self.out_folder = out_folder
+        self.subscribeResultsTime = 0
 
         if self.out_folder and not os.path.isdir(self.out_folder):  # Create directory if not there
             os.mkdir(self.out_folder)
@@ -34,17 +37,21 @@ class subscribeResults():
     async def subscribe(self):
         print("Subscribing to results")
         await self.prepare_data()
-        await self.ws_obj.handle_send(self.requestData)
+        await self.ws_obj.handle_send(self.requestData )
 
         counter = 0
         while counter < self.num_chunks:
             await self.ws_obj.handle_recieve()
+            if counter == self.num_chunks - 1:
+                subscribeResultsTime = datetime.datetime.now().time()
+                self.subscribeResultsTime = subscribeResultsTime
+                print("subscribeResultsTime: ", subscribeResultsTime)
             if self.ws_obj.subscribeStats:
                 response = self.ws_obj.subscribeStats[0]
                 self.ws_obj.subscribeStats = []
                 statusCode = response[10:13].decode('utf-8')
                 if statusCode != '200':
-                    print("Status:", statusCode)
+                    print("Subscribe Status:", statusCode)
 
             elif self.ws_obj.chunks:
                 counter += 1
@@ -55,6 +62,7 @@ class subscribeResults():
                 if self.out_folder:
                     with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
                         f.write(response[13:])
+                        print('/result_' + str(counter) + '.bin has been saved.')
 
         await self.ws_obj.handle_close()
         return

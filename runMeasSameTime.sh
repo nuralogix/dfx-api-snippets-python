@@ -1,0 +1,3 @@
+#!/bin/bash
+export RUN_TIMES=50
+yes "server=qa" | head -n $RUN_TIMES | xargs -i -P $RUN_TIMES python measure.py --studyID=d48018bd-8500-48d4-9414-26768ce05ab7 --licenseKey=FfEorpxO/8E/91WozClZ --username=daphnezhou@nuralogix.ai --password=12345 --outputDir=/home/daphne/latestenv/dfx-api-snippets-python/results/ --connectionMethod=Websocket --payloadDir=/home/daphne/latestenv/dfx-api-snippets-python/payload/ --{}

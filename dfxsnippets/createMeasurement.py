@@ -1,4 +1,5 @@
 import json
+import datetime
 
 import requests
 
@@ -12,6 +13,7 @@ class createMeasurement():
         self.mode = mode
 
     def create(self):
+        createMeaResults = []
         url = self.rest_url + "/measurements"
         data = {}
         data["StudyID"] = self.studyID
@@ -26,12 +28,18 @@ class createMeasurement():
         except:
             raise ValueError(' Cannot create measurement on server')
         print("*" * 10)
+        createMeaTime = datetime.datetime.now().time()
+        print("createMeasurement time: ", createMeaTime)
+        createMeaResults.append(createMeaTime)
         print("createMeasurement response code: ", response.status_code)
         print("createMeasurement response body: ", response.json())
         print("*" * 10)
+        
         try:
             measurementID = response.json()['ID']
-            return measurementID
+            createMeaResults.append(measurementID)
+            # return measurementID
+            return createMeaResults
         except:
             raise ValueError(' Cannot create measurement on server')
 

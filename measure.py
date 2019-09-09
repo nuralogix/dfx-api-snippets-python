@@ -2,6 +2,12 @@ import argparse
 import asyncio
 import requests
 import json
+import datetime
+import xlsxwriter as xls
+import openpyxl as op
+import pandas as pd
+from os import path
+from NamedAtomicLock import NamedAtomicLock
 
 from dfxsnippets.addData import addData
 from dfxsnippets.createMeasurement import createMeasurement
@@ -73,8 +79,8 @@ if __name__ == "__main__":
                 "Email": "{}".format(username),
                 "Password": "{}".format(password)
                 }
-    userheaders = {"Content-Type": "application/json", "Authorization": "{}".format(deviceToken)}
-    userResposne = requests.post(rest_url+'/users/auth', data=json.dumps(userdata), headers=userheaders)
+    userHeaders = {"Content-Type": "application/json", "Authorization": "{}".format(deviceToken)}
+    userResposne = requests.post(rest_url+'/users/auth', data=json.dumps(userdata), headers=userHeaders)
     userToken = userResposne.text[10:-2]
     print("User Token: ", userToken)
 
@@ -88,7 +94,10 @@ if __name__ == "__main__":
 
     # Create a measurement object and get a measurement ID
     createmeasurementObj = createMeasurement(studyID, token, rest_url, mode)
-    measurementID = createmeasurementObj.create()
+    # measurementID = createmeasurementObj.create()
+    createMeaResults = createmeasurementObj.create()
+    cretaeMeaTime = createMeaResults[0]
+    measurementID = createMeaResults[1]
 
     # Create an addData object (which prepares the data need to be sent in the input_directory)
     if conn_method == 'REST':
@@ -114,4 +123,52 @@ if __name__ == "__main__":
 
     wait_tasks = asyncio.wait(tasks) 
     loop.run_until_complete(wait_tasks)
+
+    # Retrieve measurement results
+    meaHeaders = {"Content-Type": "application/json", "Authorization": "{}".format(userToken)}
+    meaResponse = requests.get(rest_url+'/measurements/'+measurementID, headers=meaHeaders)
+    print('*'*50)
+    print("Measurement (", measurementID, ") Retrieve Results: \n", meaResponse.json())
+
     loop.close()
+
+    # Calculate the total process time for each measurement
+    subscribeResultsTime = subscriberesultsObj.subscribeResultsTime
+    t1 = datetime.datetime.combine(datetime.date.today(), cretaeMeaTime)
+    t2 = datetime.datetime.combine(datetime.date.today(), subscribeResultsTime)
+    tDiff = t2 - t1
+    print('*'*50)
+    print("Measurement (", measurementID, ") Process Time(s): ", tDiff.total_seconds())
+    print('*'*50)
+
+    # Generate Test Report
+    myLock = NamedAtomicLock('saveTimeToXL')
+    if myLock.acquire(timeout=15):
+        if path.exists('Test_Report.xlsx') == True:
+            print("Test_Report.xlsx already exists, append to it.")
+
+            df = pd.read_excel('Test_Report.xlsx')
+
+            excelRow = [(measurementID, str(cretaeMeaTime), str(subscribeResultsTime), str(tDiff.total_seconds()))]
+            df_new = pd.DataFrame(excelRow, columns=['Measurement ID', 'Create Measurement Time', 'Subscribe Measurement Time', 'Total Measurement Process Time'])
+            # print("df_new: ", df_new)
+
+            df = df.append(df_new, ignore_index=True)
+
+            # print("df after append: ", df)
+        
+        else:
+            print("Test_Report.xlsx does not exist, create a new one.")    
+
+            excelRow = [(measurementID, str(cretaeMeaTime), str(subscribeResultsTime), str(tDiff.total_seconds()))]
+            df = pd.DataFrame(excelRow, columns=['Measurement ID', 'Create Measurement Time', 'Subscribe Measurement Time', 'Total Measurement Process Time'])    
+
+            # print("df after create: ", df)
+
+        df.to_excel('Test_Report.xlsx', index=False)
+
+        print('Measurement: '+measurementID+' has been saved to Test Report!')
+
+        myLock.release()
+    else:
+        print('*****!!!!! Unable to acquire lock !!!!!!*****')
