@@ -62,10 +62,11 @@ input_directory = args.payloadDir
 output_directory = args.outputDir
 ```
 
-Then, we create the eventloop which manages all the async tasks:
+Then, we create the eventloop which manages all the async tasks, as well as a list of async tasks:
 
 ```python
 loop = asyncio.get_event_loop()
+tasks = []
 ```
 
 and a `WebsocketHandler` object for handling websockets:
@@ -74,7 +75,16 @@ and a `WebsocketHandler` object for handling websockets:
 websocketobj = WebsocketHandler(token, ws_url)
 ```
 
-We create a Measurement and get it's `measurementID`
+Now, we must establish the websocket connection. Note that this must be done first as not doing so will return errors.
+However, it needs to time out after a few seconds in case of a failure, so we handle it as follows:
+
+```python
+tasks.append(loop.create_task(websocketobj.connect_ws()))
+wait_tasks = asyncio.wait(tasks, timeout=10)
+loop.run_until_complete(wait_tasks)
+```
+
+We then create a Measurement and get it's `measurementID`
 
 ```python
 createmeasurementObj = createMeasurement(studyID, token, rest_url)
@@ -99,17 +109,9 @@ subscriberesultsObj = subscribeResults(
     measurementID, token, websocketobj, adddataObj.num_chunks, out_folder=output_directory)
 ```
 
-We connect to the websocket first in the event loop (if this is not done first
-there will be errors). This starts the event loop.
-
-```python
-loop.run_until_complete(websocketobj.connect_ws())
-```
-
 Add the `adddataObj.sendAsync()` and `subscribeResults.subscribe()` method to an `async` task list:
 
 ```python
-tasks = []
 tasks.append(loop.create_task(adddataObj.sendAsync()))
 tasks.append(loop.create_task(subscriberesultsObj.subscribe()))
 ```
@@ -129,5 +131,11 @@ results are received, in the task list to finish.
 ```python
 wait_tasks = asyncio.wait(tasks)
 loop.run_until_complete(wait_tasks)
+```
+
+At the end, we need to close the websocket connection and close the event loop:
+
+```python
+loop.run_until_complete(websocketobj.handle_close())
 loop.close()
 ```

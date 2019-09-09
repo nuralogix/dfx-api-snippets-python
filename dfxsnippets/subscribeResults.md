@@ -49,7 +49,7 @@ server(so it knows when to disconnect) in use, and an optional output folder `ou
 for writing the output files.
 
 ```python
-def __init__(self, measurementID, token, websocketobj, num_chunks, out_folder=None):
+def __init__(self, measurementID:str, token:str, websocketobj:websocketHandler, num_chunks:int, out_folder:str=None):
     self.measurementID = measurementID
     self.token = token
     self.ws_url = websocketobj.ws_url
@@ -140,10 +140,4 @@ The actual result is the `[13:]` part and we can just save them into the
 ```python
 with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
     f.write(response[13:])
-```
-
-Finally, when all the chunks have been received, we close the websocket by calling
-
-```python
-await self.ws_obj.handle_close()
 ```

@@ -19,7 +19,8 @@ class subscribeResults():
         self.out_folder = out_folder
         self.subscribeResultsTime = 0
 
-        if self.out_folder and not os.path.isdir(self.out_folder):  # Create directory if not there
+        if self.out_folder and not os.path.isdir(
+                self.out_folder):  # Create directory if not there
             os.mkdir(self.out_folder)
 
     async def prepare_data(self):
@@ -31,8 +32,11 @@ class subscribeResults():
         data['Params'] = dict(ID=self.measurementID)
 
         websocketRouteID = '0510'
-        requestMessageProto = ParseDict(data, SubscribeResultsRequest(), ignore_unknown_fields=True)
-        self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode() + requestMessageProto.SerializeToString()
+        requestMessageProto = ParseDict(data,
+                                        SubscribeResultsRequest(),
+                                        ignore_unknown_fields=True)
+        self.requestData = f'{websocketRouteID:4}{wsID:10}'.encode(
+        ) + requestMessageProto.SerializeToString()
 
     async def subscribe(self):
         print("Subscribing to results")
@@ -57,10 +61,12 @@ class subscribeResults():
                 counter += 1
                 response = self.ws_obj.chunks[0]
                 self.ws_obj.chunks = []
-                print("Data received; Chunk: " + str(counter) + "; Status: " + str(statusCode))
+                print("Data received; Chunk: " + str(counter) + "; Status: " +
+                      str(statusCode))
 
                 if self.out_folder:
-                    with open(self.out_folder + '/result_' + str(counter) + '.bin', 'wb') as f:
+                    with open(self.out_folder + '/result_' + str(counter) + '.bin',
+                              'wb') as f:
                         f.write(response[13:])
                         print('/result_' + str(counter) + '.bin has been saved.')
 
