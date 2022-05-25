@@ -1,3 +1,5 @@
+**This repository is now retired**
+
 # DFX API Python Snippets
 
 This repository contains snippets of Python code you may find useful to connect to the
